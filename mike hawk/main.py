@@ -5,6 +5,7 @@ class Listener:
     def __init__(self):
         self._keys = []
         self._events = []
+        self._counter = 0
 
     def listen(self):
         self._keys = []
@@ -21,13 +22,16 @@ class Listener:
                 return True
             return False
         
+        self._counter += 1
         keys = pygame.key.get_pressed()
         if key in PYGAME_CAPS_KEYS.keys():
-            if keys[PYGAME_CAPS_KEYS[key]]: 
+            if keys[PYGAME_CAPS_KEYS[key]] and self._counter > trigger:
+                self._counter = 0 
                 return True
             return False
 
-        if keys[eval(f"pygame.K_{key}")]:
+        if keys[eval(f"pygame.K_{key}")] and self._counter > trigger:
+            self._counter = 0
             return True
         return False
 
@@ -49,7 +53,7 @@ class Main:
 
         self.listener.on_event("quit", quit)
 
-        if self.listener.key_pressed("space", hold=True):
+        if self.listener.key_pressed("space", hold=True, trigger=10):
             print("ggaboung")
 
         pygame.display.update()
