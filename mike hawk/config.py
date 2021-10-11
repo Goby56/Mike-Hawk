@@ -15,11 +15,13 @@ colors = {
     "whiteknight": (200, 200, 200)
 }
 
-import pygame, os, ctypes
+import ctypes
 SCREENSIZE = ctypes.windll.user32.GetSystemMetrics(0), ctypes.windll.user32.GetSystemMetrics(1)
 SCREEN_WIDTH, SCREEN_HEIGHT = SCREENSIZE
-print(SCREENSIZE)
 
-res_dir = os.path.join("res")
+# LOAD RESOURCES
+import pygame, os
+
+res_dir = os.path.join("assets")
 
 spritesheet = pygame.image.load(os.path.join(res_dir, "spritesheet.png"))
