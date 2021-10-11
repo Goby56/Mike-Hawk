@@ -22,6 +22,6 @@ SCREEN_WIDTH, SCREEN_HEIGHT = SCREENSIZE
 # LOAD RESOURCES
 import pygame, os
 
-res_dir = os.path.join("assets")
+assets_dir = os.path.join("assets")
 
-spritesheet = pygame.image.load(os.path.join(res_dir, "spritesheet.png"))
+spritesheet = pygame.image.load(os.path.join(assets_dir, "spritesheet.png"))
