@@ -18,6 +18,7 @@ colors = {
 import ctypes
 SCREENSIZE = ctypes.windll.user32.GetSystemMetrics(0), ctypes.windll.user32.GetSystemMetrics(1)
 SCREENSIZE = (800, 700)
+SCREEN_RECT = pygame.Rect((0, 0), SCREENSIZE)
 SCREEN_WIDTH, SCREEN_HEIGHT = SCREENSIZE
 
 # LOAD RESOURCES

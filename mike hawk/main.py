@@ -31,14 +31,16 @@ class Main:
         self._display = pygame.display.set_mode(SCREENSIZE)
         self._clock = pygame.time.Clock()
 
-        self.disrect = self._display.get_rect()
         self.canvas = pygame.Surface(SCREENSIZE)
         self.listener = Listener()
 
     def main_loop(self):
         self.listener.listen()
-        self.listener.on_event("quit", lambda: quit())
-        if self.listener.key_pressed("g"): print("ggaboung")
+        
+        self.listener.on_event("quit", quit)
+
+        if self.listener.key_pressed("g"): 
+            print("ggaboung")
 
         pygame.display.update()
         self._clock.tick(60)
