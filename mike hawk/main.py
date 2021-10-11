@@ -1,5 +1,5 @@
 import pygame
-from config import *
+from res.config import *
 
 class Main:
     def __init__(self):
