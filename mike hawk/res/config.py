@@ -11,18 +11,23 @@ colors = {
     "red": (255, 0, 0),
     "blue": (0, 255, 0),
     "green": (0, 0, 255),
-    "blackmagic": (20, 20, 20),
-    "whiteknight": (200, 200, 200)
+    "black magic": (20, 20, 20),
+    "white knight": (200, 200, 200)
 }
 
 import ctypes
 SCREENSIZE = ctypes.windll.user32.GetSystemMetrics(0), ctypes.windll.user32.GetSystemMetrics(1)
 SCREENSIZE = (800, 700)
-SCREEN_RECT = pygame.Rect((0, 0), SCREENSIZE)
+
 SCREEN_WIDTH, SCREEN_HEIGHT = SCREENSIZE
 
 # LOAD RESOURCES
 import pygame, os
+
+SCREEN_RECT = pygame.Rect((0, 0), SCREENSIZE)
+PYGAME_CAPS_KEYS = {
+    "space": pygame.K_SPACE
+}
 
 assets_dir = os.path.join("assets")
 

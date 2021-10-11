@@ -16,9 +16,19 @@ class Listener:
                 self._keys.append(pygame.key.name(event.key))
 
     def key_pressed(self, key, hold=False, trigger=0): # if statement
-        if key in self._keys and not hold:
-            return True
+        if not hold:
+            if key in self._keys:
+                return True
+            return False
+        
+        keys = pygame.key.get_pressed()
+        if key in PYGAME_CAPS_KEYS.keys():
+            if keys[PYGAME_CAPS_KEYS[key]]: 
+                return True
+            return False
 
+        if keys[eval(f"pygame.K_{key}")]:
+            return True
         return False
 
     def on_event(self, event, func): # call function
@@ -36,10 +46,10 @@ class Main:
 
     def main_loop(self):
         self.listener.listen()
-        
+
         self.listener.on_event("quit", quit)
 
-        if self.listener.key_pressed("g"): 
+        if self.listener.key_pressed("space", hold=True):
             print("ggaboung")
 
         pygame.display.update()
