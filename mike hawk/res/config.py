@@ -17,6 +17,7 @@ colors = {
 
 import ctypes
 SCREENSIZE = ctypes.windll.user32.GetSystemMetrics(0), ctypes.windll.user32.GetSystemMetrics(1)
+SCREENSIZE = (800, 700)
 SCREEN_WIDTH, SCREEN_HEIGHT = SCREENSIZE
 
 # LOAD RESOURCES
@@ -24,4 +25,4 @@ import pygame, os
 
 assets_dir = os.path.join("assets")
 
-spritesheet = pygame.image.load(os.path.join(assets_dir, "spritesheet.png"))
+#spritesheet = pygame.image.load(os.path.join(assets_dir, "spritesheet.png"))
