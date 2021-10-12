@@ -1,5 +1,6 @@
 import pygame, time
 from res.config import *
+from phases.menu import Menu
 
 class Listener:
     def __init__(self):
@@ -96,10 +97,12 @@ class Main:
         self.dt = 0
         self.canvas = pygame.Surface(SCREENSIZE)
         self.listener = Listener()
-        self.phase_stack = []
+        Phase.phase_stack.append(Menu(self.canvas, self.listener, self.dt))
 
     def main_loop(self):
         self.listener.listen()
+        
+        Phase.phase_stack[-1].update()
 
         self.listener.on_event("quit", quit)
 
@@ -122,11 +125,13 @@ class Main:
 
 
 class Phase:
+    phase_stack = []
+
     def enter_phase(self): # Enters a new phase
-        self.phase_stack.append(self)
+        Phase.phase_stack.append(self)
 
     def exit_phase(self): # Exits to the previous state
-        self.phase_stack.pop()
+        Phase.phase_stack.pop()
 
 main = Main()
 while True:
