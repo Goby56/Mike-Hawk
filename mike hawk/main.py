@@ -103,6 +103,7 @@ class Main:
         self.listener.listen()
         
         Phase.phase_stack[-1].update()
+        Phase.phase_stack[-1].render()
 
         self.listener.on_event("quit", quit)
 
