@@ -1,4 +1,4 @@
-import pygame
+import pygame, time
 from res.config import *
 
 class Listener:
@@ -48,6 +48,8 @@ class Main:
     def __init__(self):
         self._display = pygame.display.set_mode(SCREENSIZE)
         self._clock = pygame.time.Clock()
+        self._previous_time = time.set()
+        self.dt = 0
 
         self.canvas = pygame.Surface(SCREENSIZE)
         self.listener = Listener()
@@ -62,6 +64,11 @@ class Main:
 
         pygame.display.update()
         self._clock.tick(60)
+
+    def get_dt(self):
+        current_time = time.time()
+        self.dt = current_time - self._previous_time
+        self._previous_time = current_time
 
 class Phase:
     pass
