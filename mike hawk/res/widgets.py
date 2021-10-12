@@ -23,7 +23,7 @@ class MenuButton:
             surf = pygame.transform.scale(self._image, 
                     (int(self.rect.width*1.2), int(self.rect.height*1.2)))
             listener.on_click(1, self._command)
-        else: 
+        else:
             surf = self._image
 
         rect = surf.get_rect()

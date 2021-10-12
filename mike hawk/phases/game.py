@@ -1,6 +1,6 @@
 import pygame
 
-from main import main, Phase
+from phase import Phase
 
 class Game(Phase):
     def __init__(self, canvas, listener, dt):

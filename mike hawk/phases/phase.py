@@ -6,3 +6,9 @@ class Phase:
 
     def exit_phase(self): # Exits to the previous state
         Phase.phase_stack.pop()
+
+    def update(self):
+        pass
+
+    def render(self):
+        pass
