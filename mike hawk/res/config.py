@@ -36,8 +36,10 @@ _menu_dir = os.path.join(_base_dir, "assets", "Menu", "MenuButton.png")
 menubutton = pygame.image.load(_menu_dir)
 
 # Initialit
-import json
-
+from .spritesheet import Spritesheet
+spritesheet = Spritesheet("8x8") # Create object of file path
+data = spritesheet.parse_sprite() # Get meta data from sheet
+frames = spritesheet.get_frames(data) # Get sequence of frames
 
 assets_dir = os.path.join("assets")
 

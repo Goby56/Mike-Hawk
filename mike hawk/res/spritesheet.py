@@ -1,5 +1,5 @@
 import pygame, os, json
-from config import sprite_dir
+from .config import sprite_dir
 
 class Spritesheet:
     """
