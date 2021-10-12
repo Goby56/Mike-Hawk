@@ -7,7 +7,6 @@ class Listener:
         self._events = []
         self._counter1 = 0
         self._counter2 = 0
-        self._prev 
 
     def listen(self):
         self._keys = []
