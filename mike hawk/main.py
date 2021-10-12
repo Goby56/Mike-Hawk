@@ -5,7 +5,9 @@ class Listener:
     def __init__(self):
         self._keys = []
         self._events = []
-        self._counter = 0
+        self._counter1 = 0
+        self._counter2 = 0
+        self._prev 
 
     def listen(self):
         self._keys = []
@@ -15,6 +17,9 @@ class Listener:
                 self._events.append("quit")
             if event.type == pygame.KEYDOWN:
                 self._keys.append(pygame.key.name(event.key))
+
+    def key_hold(self, key, duration): # if key is hold for duration
+        self._counter2 += 1
 
     def key_pressed(self, key, hold=False, trigger=0): # if statement
         if not hold:
