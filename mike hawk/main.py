@@ -16,12 +16,17 @@ class Main:
         self.listener = Listener()
         #Phase.phase_stack.append(Menu(self.canvas, self.listener, self.dt))
         self.m = MenuButton(self.canvas, (100, 100), "Quit", command=quit)
+        self.yeet = MenuButton(self.canvas, (300, 100), "Casper", command=lambda: print("yeet"))
+        self.c = 0
 
     def main_loop(self):
+        self.c += 0.01
         self.canvas.fill(colors["black magic"])
         self.listener.listen()
         
         self.m.update(self.listener)
+        self.yeet.update(self.listener)
+        self.canvas.blit(pygame.transform.scale(frames[int(self.c%8)], (100, 100)), (300, 300))
         #Phase.phase_stack[-1].update()
         #Phase.phase_stack[-1].render()
 

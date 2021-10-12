@@ -4,11 +4,12 @@ from .config import menubutton, colors
 class MenuButton:
     def __init__(self, surface, pos, text, command=None):
         self._surface = surface
-        self._image = menubutton
+        self._image = menubutton.copy()
         self._command = command
+        self._text = text
 
         font = pygame.font.SysFont("Ariel", 20)
-        font_surf = font.render(text, False, colors["white knight"])
+        font_surf = font.render(self._text, False, colors["white knight"])
         img_center, font_center = self._image.get_rect().center, font_surf.get_rect().center
         center = (img_center[0] - font_center[0], img_center[1] - font_center[1])
 
