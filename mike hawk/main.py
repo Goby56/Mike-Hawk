@@ -75,6 +75,10 @@ class Listener:
             return duration
         return self._counter4
 
+    def on_key(self, key: str, func):
+        if key in self._keys:
+            func()
+
     def on_click(self, mouse: int, func):
         if mouse in self._mouse:
             func()
