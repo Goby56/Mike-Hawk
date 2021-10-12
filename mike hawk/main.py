@@ -35,6 +35,8 @@ class Main:
         self.dt = current_time - self._previous_time
         self._previous_time = current_time
 
-main = Main()
-while True:
-    main.main_loop()
+
+if __name__ == "__main__":
+    main = Main()
+    while True:
+        main.main_loop()

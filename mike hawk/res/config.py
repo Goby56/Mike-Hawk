@@ -32,15 +32,11 @@ PYGAME_CAPS_KEYS = {
 
 _base_dir = os.path.abspath(os.path.dirname(__file__))
 sprite_dir = os.path.join(_base_dir, "assets", "spritesheets")
-_menu_dir = os.path.join(_base_dir, "assets", "Menu", "MenuButton.png")
+_menu_dir = os.path.join(_base_dir, "assets", "menu", "MenuButton.png")
 menubutton = pygame.image.load(_menu_dir)
 
-# Initialit
+# Loading sprites
 from .spritesheet import Spritesheet
 spritesheet = Spritesheet("8x8") # Create object of file path
 data = spritesheet.parse_sprite() # Get meta data from sheet
 frames = spritesheet.get_frames(data) # Get sequence of frames
-
-assets_dir = os.path.join("assets")
-
-#spritesheet = pygame.image.load(os.path.join(assets_dir, "spritesheet.png"))
