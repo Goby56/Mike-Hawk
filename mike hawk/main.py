@@ -7,6 +7,7 @@ class Listener:
         self._events = []
         self._counter1 = 0
         self._counter2 = 0
+        self._last_key = None 
 
     def listen(self):
         self._keys = []
@@ -17,8 +18,17 @@ class Listener:
             if event.type == pygame.KEYDOWN:
                 self._keys.append(pygame.key.name(event.key))
 
-    def key_hold(self, key, duration): # if key is hold for duration
-        self._counter2 += 1
+    def key_hold(self, key, duration): # if key is hold for duration, func will return % or equivilent of hold done
+        current_key = self.key_pressed(key, hold=True)
+        if current_key and self._last_key:
+            self._counter2 += 1
+        else:
+            self._counter2 = 0
+        self._last_key = current_key
+        if self._counter2 == duration:
+            self._counter2 = 0
+            return duration
+        return self._counter2
 
     def key_pressed(self, key, hold=False, trigger=0): # if statement
         if not hold:
@@ -26,16 +36,16 @@ class Listener:
                 return True
             return False
         
-        self._counter += 1
+        self._counter1 += 1
         keys = pygame.key.get_pressed()
         if key in PYGAME_CAPS_KEYS.keys():
-            if keys[PYGAME_CAPS_KEYS[key]] and self._counter > trigger:
-                self._counter = 0 
+            if keys[PYGAME_CAPS_KEYS[key]] and self._counter1 > trigger:
+                self._counter1 = 0 
                 return True
             return False
 
-        if keys[eval(f"pygame.K_{key}")] and self._counter > trigger:
-            self._counter = 0
+        if keys[eval(f"pygame.K_{key}")] and self._counter1 > trigger:
+            self._counter1  = 0
             return True
         return False
 
@@ -57,8 +67,11 @@ class Main:
 
         self.listener.on_event("quit", quit)
 
-        if self.listener.key_pressed("space", hold=True, trigger=10):
+        if self.listener.key_pressed("space", hold=True, trigger=50):
             print("ggaboung")
+
+        if self.listener.key_hold("w", 100) == 100:
+            print("ni hao")
 
         pygame.display.update()
         self._clock.tick(60)
