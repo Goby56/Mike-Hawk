@@ -31,54 +31,12 @@ PYGAME_CAPS_KEYS = {
 }
 
 _base_dir = os.path.abspath(os.path.dirname(__file__))
-_sprite_dir = os.path.join(_base_dir, "assets", "spritesheets")
+sprite_dir = os.path.join(_base_dir, "assets", "spritesheets")
 _menu_dir = os.path.join(_base_dir, "assets", "Menu", "MenuButton.png")
 menubutton = pygame.image.load(_menu_dir)
 
 # Initialit
 import json
-
-class Spritesheet:
-    def __init__(self, filename):
-        """Do not include {.PNG} or {.JSON}, just filename"""
-        self.filename = filename
-        self.file_path = os.path.join(_sprite_dir, filename)
-        self.sprite_sheet = pygame.image.load(self.file_path + ".png")#.convert()
-        self.meta_data = os.path.join(_sprite_dir, self.filename + ".json")
-        with open(self.meta_data) as f:
-            self.data = json.load(f)
-
-    def parse_sprite(self):
-        sprite_data = dict()
-        for name in self.data["frames"].keys():
-            sd = self.data["frames"][name]["frame"] # Sprite data
-            x, y, w, h = sd["x"], sd["y"], sd["w"], sd["h"]
-            sprite_data[name] = (x,y,w,h)
-        return sprite_data
-
-    def get_sprite(self, data, color_key = (0,0,0)):
-        x,y,w,h = data
-        sprite = pygame.Surface((w,h))
-        sprite.set_colorkey(color_key)
-        sprite.blit(self.sprite_sheet, (0,0), (data))
-        return sprite
-
-    def get_frames(self, data_list, color_key = (0,0,0)):
-        if type(data_list) == dict:
-            data_list = data_list.values() 
-        frame_list = []
-        for data in data_list:
-            sprite = self.get_sprite(data, color_key)
-            frame_list.append(sprite)
-        return frame_list
-
-spritesheet = Spritesheet("8x8")
-data = spritesheet.parse_sprite()
-frames = spritesheet.get_frames(data)
-print(frames)
-
-
-print(data)
 
 
 assets_dir = os.path.join("assets")
