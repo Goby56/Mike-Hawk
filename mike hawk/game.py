@@ -7,10 +7,13 @@ class Game(Phase):
         self.canvas = canvas
         self.listener = listener
         self.dt = dt
-        
 
     def update():
         pass
 
     def render():
         pass
+
+class Player(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__()
