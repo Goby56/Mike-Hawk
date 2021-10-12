@@ -107,8 +107,9 @@ class Main:
         self.canvas.fill(colors["black magic"])
         self.listener.listen()
         
-        #Phase.phase_stack[-1].update()
         self.m.update()
+        #Phase.phase_stack[-1].update()
+        #Phase.phase_stack[-1].render()
 
         self.listener.on_event("quit", quit)
 
