@@ -1,6 +1,9 @@
 import pygame, time
 from res.config import *
-from phases.menu import Menu
+#from phases.menu import Menu
+from res.widgets import MenuButton
+
+pygame.font.init()
 
 class Listener:
     def __init__(self):
@@ -97,12 +100,15 @@ class Main:
         self.dt = 0
         self.canvas = pygame.Surface(SCREENSIZE)
         self.listener = Listener()
-        Phase.phase_stack.append(Menu(self.canvas, self.listener, self.dt))
+        #Phase.phase_stack.append(Menu(self.canvas, self.listener, self.dt))
+        self.m = MenuButton(self.canvas, (100, 100), "test")
 
     def main_loop(self):
+        self.canvas.fill(colors["black magic"])
         self.listener.listen()
         
-        Phase.phase_stack[-1].update()
+        #Phase.phase_stack[-1].update()
+        self.m.update()
 
         self.listener.on_event("quit", quit)
 
@@ -115,6 +121,7 @@ class Main:
         if self.listener.mouse_clicked(1, hold=True):
             print("clcl")
 
+        self._display.blit(self.canvas, (0, 0))
         pygame.display.update()
         self._clock.tick(60)
 
