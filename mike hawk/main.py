@@ -5,20 +5,23 @@ class Listener:
     def __init__(self):
         self._keys = []
         self._events = []
-        self._counter1 = 0
-        self._counter2 = 0
-        self._last_key = None 
+        self._mouse = []
+        self._counter1, self._counter2, self._counter3, self._counter4 = 0, 0, 0, 0 # possible error, counters may not be able to work with multible key_pressed
+        self._last_key = None
+        self._last_mouse = None
 
     def listen(self):
-        self._keys = []
-        self._events = []
+        self._keys, self._events, self._mouse = [], [], []
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self._events.append("quit")
             if event.type == pygame.KEYDOWN:
                 self._keys.append(pygame.key.name(event.key))
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                self._mouse.append(event.button)
 
-    def key_hold(self, key, duration): # if key is hold for duration, func will return % or equivilent of hold done
+    def key_hold(self, key: str, duration: int): # if key is hold for duration, func will return % or equivilent of hold done
         current_key = self.key_pressed(key, hold=True)
         if current_key and self._last_key:
             self._counter2 += 1
@@ -30,7 +33,7 @@ class Listener:
             return duration
         return self._counter2
 
-    def key_pressed(self, key, hold=False, trigger=0): # if statement
+    def key_pressed(self, key: str, hold=False, trigger=0): # if statement
         if not hold:
             if key in self._keys:
                 return True
@@ -49,6 +52,33 @@ class Listener:
             return True
         return False
 
+    def mouse_clicked(self, mouse: int, hold=False, trigger=0):
+        if not hold:
+            if mouse in self._mouse:
+                return True
+            return False
+        
+        self._counter3 += 1
+        if pygame.mouse.get_pressed()[mouse-1] and self._counter3 > trigger:
+            self._counter3 = 0
+            return True
+
+    def mouse_hold(self, mouse: int, duration: int):
+        current_mouse = self.mouse_clicked(mouse, hold=True)
+        if current_mouse and self._last_mouse:
+            self._counter4 += 1
+        else:
+            self._counter4 = 0
+
+        if self._counter4 == duration:
+            self._counter4 = 0
+            return duration
+        return self._counter4
+
+    def on_click(self, mouse: int, func):
+        if mouse in self._mouse:
+            func()
+
     def on_event(self, event, func): # call function
         if event in self._events:
             func()
@@ -58,7 +88,7 @@ class Main:
     def __init__(self):
         self._display = pygame.display.set_mode(SCREENSIZE)
         self._clock = pygame.time.Clock()
-        self._previous_time = time.set()
+        self._previous_time = time.time()
         self.dt = 0
 
         self.canvas = pygame.Surface(SCREENSIZE)
@@ -74,6 +104,9 @@ class Main:
 
         if self.listener.key_hold("w", 100) == 100:
             print("ni hao")
+
+        if self.listener.mouse_clicked(1, hold=True):
+            print("clcl")
 
         pygame.display.update()
         self._clock.tick(60)
