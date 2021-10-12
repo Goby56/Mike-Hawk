@@ -26,13 +26,7 @@ class Main:
         #Phase.phase_stack[-1].render()
 
         self.listener.on_event("quit", quit)
-        self.listener.on_key("escape", quit)
-
-        if self.listener.key_pressed("space", hold=True, trigger=50):
-            print("space")
-
-        if self.listener.key_pressed("a", hold=True, trigger=10):
-            print("a")
+        self.listener.on_key("escape", quit)    
 
         self._display.blit(self.canvas, (0, 0))
         pygame.display.update()

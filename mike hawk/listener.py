@@ -34,7 +34,7 @@ class Listener:
             return duration
         return self._counter2
 
-    def key_pressed(self, key: str, hold=False, trigger=1): # if statement
+    def key_pressed(self, key: str, hold=False, trigger=1): # fix 
         if not hold:
             if key in self._keys:
                 return True
@@ -51,7 +51,7 @@ class Listener:
             return True
         return False
 
-    def mouse_clicked(self, mouse: int, hold=False, trigger=1):
+    def mouse_clicked(self, mouse: int, hold=False, trigger=1): # fix
         if not hold:
             if mouse in self._mouse:
                 return True
