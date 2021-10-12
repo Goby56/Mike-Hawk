@@ -94,9 +94,9 @@ class Main:
         self._clock = pygame.time.Clock()
         self._previous_time = time.time()
         self.dt = 0
-
         self.canvas = pygame.Surface(SCREENSIZE)
         self.listener = Listener()
+        self.phase_stack = []
 
     def main_loop(self):
         self.listener.listen()
@@ -120,8 +120,13 @@ class Main:
         self.dt = current_time - self._previous_time
         self._previous_time = current_time
 
+
 class Phase:
-    pass
+    def enter_phase(self): # Enters a new phase
+        self.phase_stack.append(self)
+
+    def exit_phase(self): # Exits to the previous state
+        self.phase_stack.pop()
 
 main = Main()
 while True:
