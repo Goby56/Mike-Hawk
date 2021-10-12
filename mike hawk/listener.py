@@ -2,6 +2,13 @@ import pygame
 from res.config import PYGAME_CAPS_KEYS
 
 class Listener:
+    """
+    Example:\n
+    listener = Listener()\n
+    while True:\n
+        listner.listen()\n
+        listner.on_event("quit", quit)\n
+    """
     def __init__(self):
         self._keys = []
         self._events = []
