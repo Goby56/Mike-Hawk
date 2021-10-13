@@ -9,7 +9,7 @@ import json, os
 from res.config import tile_frames, _base_dir, sprite_dir
 
 class Game(Phase):
-    def __init__(self, canvas, listener, dt):
+    def __init__(self, canvas, listener):
         self.canvas = canvas
         self.listener = listener
         self.dt = dt

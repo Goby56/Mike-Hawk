@@ -5,27 +5,21 @@ sys.path.append("..")
 
 from .phase import Phase
 from .game import Game
-from res.widgets import MenuButton
+from res.widgets import MenuButton, MenuButtonPanel
 from res.config import dynamite_frames
 
 class MainMenu(Phase):
     def __init__(self, canvas, listener):
         self.canvas, self.listener = canvas, listener
 
-        self.playerbutton = MenuButton(canvas, listener, (100, 100), "New Phase", 
-            command=lambda: Game(canvas, listener).enter_phase())
+        self.buttonpanel = MenuButtonPanel(canvas, listener, (200, 100), 3, 20, ["New Phase", "Options", "Quit"],
+            [lambda: Game(canvas, listener).enter_phase(), lambda: OptionsMenu(canvas, listener).enter_phase(), quit])
 
-        self.optionsbutton = MenuButton(canvas, listener, (100, 200), "Options", 
-        command=lambda: OptionsMenu(canvas, listener).enter_phase())
-        
-        self.quitbutton = MenuButton(canvas, listener, (100, 300), "Quit", command=quit)
         self.counter = 0
 
     def update(self, dt):
         self.counter += 0.25
-        self.playerbutton.update()
-        self.optionsbutton.update()
-        self.quitbutton.update()
+        self.buttonpanel.update()
 
     def render(self):
         scaled_surface = pygame.transform.scale(dynamite_frames[int(self.counter%4)], (100, 100))

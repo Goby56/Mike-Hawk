@@ -2,6 +2,7 @@ import pygame
 from .config import menubutton, colors
 
 class MenuButton:
+    rect = menubutton.get_rect()
     def __init__(self, surface, listener, pos, text, command=None):
         self._surface = surface
         self._image = menubutton.copy()
@@ -32,6 +33,21 @@ class MenuButton:
                 self.rect.top - (rect.height - self.rect.height)//2)
 
         self._surface.blit(surf, topleft)
+
+
+class MenuButtonPanel:
+    def __init__(self, surface, listener, start_pos, buttons: int, padding, texts: list, commands: list):
+        self._surface = surface
+        self._listener = listener
+        self.pos = start_pos
+        self.buttons = []
+        for i in range(buttons):
+            self.buttons.append(MenuButton(surface, listener, (start_pos[0], start_pos[1]+(MenuButton.rect.height+padding)*i),
+                texts[i], command=commands[i]))
+
+    def update(self):
+        for button in self.buttons:
+            button.update()
 
 if __name__ == "__main__":
     pygame.font.init()
