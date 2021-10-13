@@ -6,7 +6,7 @@ sys.path.append("..")
 from .phase import Phase
 from .game import Game
 from res.widgets import MenuButton, MenuButtonPanel
-from res.config import dynamite_frames
+from res.config import dynamite_frames, SCREEN_RECT
 
 class MainMenu(Phase):
     def __init__(self, canvas, listener):
@@ -24,15 +24,17 @@ class MainMenu(Phase):
     def render(self):
         scaled_surface = pygame.transform.scale(dynamite_frames[int(self.counter%4)], (100, 100))
         rotated_surface = pygame.transform.rotate(scaled_surface, self.counter*4)
-        self.canvas.blit(rotated_surface, (300, 300))
+        frame_rect =rotated_surface.get_rect()
+        padding = 10
+        self.canvas.blit(rotated_surface, (SCREEN_RECT.width-frame_rect.width-padding, SCREEN_RECT.height-frame_rect.height-padding))
 
 
 class MapMenu(Phase):
     def __init__(self, canvas, listener):
         self.buttonpanel = MenuButtonPanel(canvas, listener, (200, 100), 6, 20, 
-            ["Dev Map", "Map 1", "Map 2", "Map 3", "Map 4", "Map 5"],
+            ["Dev Map", "Map 1", "Map 2", "Map 3", "Map 4", "Back"],
             [lambda: Game(canvas, listener).enter_phase(), lambda: print("Map 1"), lambda: print("Map 2"), 
-            lambda: print("Map 3"), lambda: print("Map 4"), lambda: print("Map 5")]
+            lambda: print("Map 3"), lambda: print("Map 4"), self.exit_phase]
         )
 
     def update(self, dt):
