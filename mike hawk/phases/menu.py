@@ -17,9 +17,9 @@ class MainMenu(Phase):
         self.counter = 0
 
     def render(self):
-        self.counter += 0.05
+        self.counter += 0.25
         self.playerbutton.update(self.listener)
         self.quitbutton.update(self.listener)
-        self.canvas.blit(pygame.transform.scale(frames[int(self.counter%8)], (100, 100)), (300, 300))
+        self.canvas.blit(pygame.transform.scale(frames[int(self.counter%4)], (100, 100)), (300, 300))
 
         

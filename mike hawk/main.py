@@ -17,7 +17,7 @@ class Main:
         MainMenu(self.canvas, self.listener, self.dt).enter_phase()
 
     def main_loop(self):
-        self.canvas.fill(colors["black magic"])
+        self.canvas.fill(colors["white knight"])
         self.listener.listen()
         
         Phase.get_current().update()

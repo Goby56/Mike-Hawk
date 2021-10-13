@@ -11,7 +11,7 @@ class Game(Phase):
         self.dt = dt
 
         self.backbutton = MenuButton(canvas, (100, 150), "Pop Phase",
-            command=lambda: [self.exit_phase(), print("back")])
+            command=self.exit_phase)
 
     def update(self):
         self.backbutton.update(self.listener)
