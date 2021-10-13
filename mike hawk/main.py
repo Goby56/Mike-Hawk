@@ -19,12 +19,11 @@ class Main:
 
     def main_loop(self):
         self.canvas.fill(colors["white knight"])
+        self.listener.listen()
 
         self.get_dt()
         for timer in self.timers:
             timer += self.dt
-
-        self.listener.listen()
         
         Phase.get_current().update()
         Phase.get_current().render()
