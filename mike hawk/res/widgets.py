@@ -2,11 +2,12 @@ import pygame
 from .config import menubutton, colors
 
 class MenuButton:
-    def __init__(self, surface, pos, text, command=None):
+    def __init__(self, surface, listener, pos, text, command=None):
         self._surface = surface
         self._image = menubutton.copy()
         self._command = command
         self._text = text
+        self._listener = listener
 
         font = pygame.font.SysFont("Ariel", 20)
         font_surf = font.render(self._text, False, colors["white knight"])
@@ -16,13 +17,13 @@ class MenuButton:
         self._image.blit(font_surf, center)
         self.rect = pygame.Rect(pos, self._image.get_size())
 
-    def update(self, listener):
+    def update(self):
         pos = pygame.mouse.get_pos()
 
         if self.rect.collidepoint(pos):
             surf = pygame.transform.scale(self._image, 
                     (int(self.rect.width*1.2), int(self.rect.height*1.2)))
-            listener.on_click(1, self._command)
+            self._listener.on_click(1, self._command)
         else:
             surf = self._image
 

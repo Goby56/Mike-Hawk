@@ -15,7 +15,7 @@ class Main:
         self.timers = {}
         self.canvas = pygame.Surface(SCREENSIZE)
         self.listener = Listener()
-        MainMenu(self.canvas, self.listener, self.dt).enter_phase()
+        MainMenu(self.canvas, self.listener).enter_phase()
 
     def main_loop(self):
         self.canvas.fill(colors["white knight"])
@@ -25,8 +25,8 @@ class Main:
         for timer in self.timers:
             timer += self.dt
         
-        Phase.get_current().update(self.listener, self.dt)
-        Phase.get_current().render(self.canvas)
+        Phase.get_current().update(self.dt)
+        Phase.get_current().render()
 
         self.listener.on_event("quit", quit)
         self.listener.on_key("escape", quit)    
