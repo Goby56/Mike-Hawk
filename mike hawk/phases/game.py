@@ -6,7 +6,7 @@ from res.widgets import MenuButton
 
 # temp import
 import json, os
-from res.config import tile_frames, _base_dir, sprite_dir
+from res.config import tile_frames, sprite_dir, dev_level
 
 class Game(Phase):
     def __init__(self, canvas, listener):
@@ -35,12 +35,10 @@ class Game(Phase):
         self.player.render()
 
     def place_tiles(self):
-        with open(os.path.join(_base_dir, "temp_world.json")) as f:
-            data = json.load(f)
-        for r, row in enumerate(data["map"]):
+        level = dev_level["map"]
+        for r, row in enumerate(level):
             for c, tile in enumerate(row):
-                if tile == 1:
-                    self.tiles.add(Tile((c,r), tile_frames[13]))
+                if tile: self.tiles.add(Tile((c,r), tile_frames[tile-1]))
 
 class Camera:
     def __init__(self, player, canvas):

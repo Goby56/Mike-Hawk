@@ -46,3 +46,7 @@ def load_frames(filename):
 
 dynamite_frames = load_frames("dynamite")
 tile_frames = load_frames("dev_tiles")
+
+import json
+with open(os.path.join(_base_dir, "dev_level.json")) as f:
+        dev_level = json.load(f)
