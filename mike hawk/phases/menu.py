@@ -2,20 +2,24 @@ import pygame, sys
 sys.path.append("..")
 
 from .phase import Phase
+from .game import Game
 from res.widgets import MenuButton
 from res.config import frames
 
 class Menu(Phase):
     def __init__(self, canvas, listener, dt):
         self.canvas, self.listener, self.dt = canvas, listener, dt
-        self.m = MenuButton(canvas, (100, 100), "Quit", command=quit)
-        self.yeet = MenuButton(canvas, (300, 100), "Casper", command=lambda: print("yeet"))
-        self.c = 0
+
+        self.playerbutton = MenuButton(canvas, (100, 100), "New Phase", 
+            command=lambda: Game(canvas, listener, dt).enter_phase())
+        
+        self.quitbutton = MenuButton(canvas, (100, 300), "Quit", command=quit)
+        self.counter = 0
 
     def render(self):
-        self.c += 0.05
-        self.m.update(self.listener)
-        self.yeet.update(self.listener)
-        self.canvas.blit(pygame.transform.scale(frames[int(self.c%8)], (100, 100)), (300, 300))
+        self.counter += 0.05
+        self.playerbutton.update(self.listener)
+        self.quitbutton.update(self.listener)
+        self.canvas.blit(pygame.transform.scale(frames[int(self.counter%8)], (100, 100)), (300, 300))
 
         

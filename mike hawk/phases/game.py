@@ -1,6 +1,8 @@
-import pygame
+import pygame, sys
+sys.path.append("..")
 
-from phase import Phase
+from .phase import Phase
+from res.widgets import MenuButton
 
 class Game(Phase):
     def __init__(self, canvas, listener, dt):
@@ -8,10 +10,13 @@ class Game(Phase):
         self.listener = listener
         self.dt = dt
 
-    def update():
-        pass
+        self.backbutton = MenuButton(canvas, (100, 150), "Pop Phase",
+            command=lambda: [self.exit_phase(), print("back")])
 
-    def render():
+    def update(self):
+        self.backbutton.update(self.listener)
+
+    def render(self):
         pass
 
 class Player(pygame.sprite.Sprite):

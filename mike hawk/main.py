@@ -14,14 +14,16 @@ class Main:
         self.dt = 0
         self.canvas = pygame.Surface(SCREENSIZE)
         self.listener = Listener()
-        Phase.phase_stack.append(Menu(self.canvas, self.listener, self.dt))
+        Menu(self.canvas, self.listener, self.dt).enter_phase()
 
     def main_loop(self):
         self.canvas.fill(colors["black magic"])
         self.listener.listen()
+
+        print(Phase.phase_stack)
         
-        Phase.phase_stack[-1].update()
-        Phase.phase_stack[-1].render()
+        Phase.get_current().update()
+        Phase.get_current().render()
 
         self.listener.on_event("quit", quit)
         self.listener.on_key("escape", quit)    
