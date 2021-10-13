@@ -46,7 +46,7 @@ class Camera:
         self.CANVAS_W, self.CANVAS_H = canvas.get_size()
 
         # Offset for follow method
-        self.MIDDLE = pygame.Vector2(-self.CANVAS_W/2 + player.rect.x/2, -self.CANVAS_H/2 + player.rect.y/2)
+        self.MIDDLE = pygame.Vector2(-self.CANVAS_W/2, -self.CANVAS_H/2 + player.rect.y/2 - 100)
         self.method = "follow"
 
     def get_offset(self):
@@ -75,9 +75,12 @@ class Player(pygame.sprite.Sprite):
 
         self.velocity = pygame.Vector2(0, 0)
         self.speed = 5
+        self.gravity = 3
 
     def update(self, dt, camera_offset):
-        self.movement(dt)
+        self.horizontal_movement(dt)
+
+        self.vertical_movement(dt)
 
         self.pos.xy += -camera_offset
         self.rect.topleft = self.pos.xy
@@ -85,7 +88,7 @@ class Player(pygame.sprite.Sprite):
     def render(self):
         self.canvas.blit(self.image, self.pos.xy)
 
-    def movement(self, dt):
+    def horizontal_movement(self, dt):
         if self.listener.key_pressed("a", hold=True):
             self.velocity.x = -self.speed
         if self.listener.key_pressed("d", hold=True):
@@ -95,8 +98,12 @@ class Player(pygame.sprite.Sprite):
             self.velocity.x = 0
 
         self.pos.x += self.velocity.x
+        self.rect.x = self.pos.x
+
+    def vertical_movement(self, dt):
+        self.velocity.y += self.gravity
         self.pos.y += self.velocity.y
-        
+        self.rect.y = self.pos.y
 
 class Tile(pygame.sprite.Sprite):
     def __init__(self, pos, image):
@@ -111,3 +118,10 @@ class Tile(pygame.sprite.Sprite):
     def update(self, camera_offset):
         self.pos.xy += -camera_offset
         self.rect.topleft = self.pos.xy
+
+def collisions(obj, group):
+    collision_list = []
+    for item in group:
+        if obj.rect.colliderect(item):
+            collision_list.append(item)
+    return collision_list
