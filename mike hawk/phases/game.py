@@ -47,16 +47,17 @@ class Player(pygame.sprite.Sprite):
         self.image = pygame.image.load(os.path.join(sprite_dir, "mike.png"))
         self.rect = self.image.get_rect(topleft = self.pos)
 
-<<<<<<< Updated upstream
         self.velocity = pygame.Vector2(0, 0)
         self.speed = 5
 
     def update(self, listener, dt):
         self.movement(listener, dt)
-=======
+
     def update(self, dt):
         self.movement(dt)
->>>>>>> Stashed changes
+
+    def update(self, dt):
+        self.movement(dt)
 
     def render(self):
         self.canvas.blit(self.image, self.pos.xy)
