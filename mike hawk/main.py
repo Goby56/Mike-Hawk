@@ -25,8 +25,8 @@ class Main:
         for timer in self.timers:
             timer += self.dt
         
-        Phase.get_current().update()
-        Phase.get_current().render()
+        Phase.get_current().update(self.listener, self.dt)
+        Phase.get_current().render(self.canvas)
 
         self.listener.on_event("quit", quit)
         self.listener.on_key("escape", quit)    

@@ -44,4 +44,5 @@ def load_frames(filename):
     frames = spritesheet.get_frames(data) # Get sequence of frames
     return frames
 
-frames = load_frames("dynamite")
+dynamite_frames = load_frames("dynamite")
+tile_frames = load_frames("8x8")

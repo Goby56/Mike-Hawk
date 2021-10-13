@@ -4,7 +4,7 @@ sys.path.append("..")
 from .phase import Phase
 from .game import Game
 from res.widgets import MenuButton
-from res.config import frames
+from res.config import dynamite_frames
 
 class MainMenu(Phase):
     def __init__(self, canvas, listener, dt):
@@ -16,10 +16,10 @@ class MainMenu(Phase):
         self.quitbutton = MenuButton(canvas, (100, 300), "Quit", command=quit)
         self.counter = 0
 
-    def render(self):
+    def render(self, canvas):
         self.counter += 0.25
         self.playerbutton.update(self.listener)
         self.quitbutton.update(self.listener)
-        self.canvas.blit(pygame.transform.scale(frames[int(self.counter%4)], (100, 100)), (300, 300))
+        canvas.blit(pygame.transform.scale(dynamite_frames[int(self.counter%4)], (100, 100)), (300, 300))
 
         
