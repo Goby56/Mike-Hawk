@@ -22,8 +22,9 @@ class Game(Phase):
         self.camera = Camera(self.player, canvas)
 
     def update(self, dt):
-        self.player.update(dt)
-        self.tiles.update(self.player.pos.xy)
+        camera_offset = self.camera.get_offset()
+        self.player.update(dt, camera_offset)
+        self.tiles.update(camera_offset)
         self.backbutton.update()
 
     def render(self):
@@ -49,7 +50,8 @@ class Camera:
         self.method = "follow"
 
     def get_offset(self):
-        exec(f"{self.method}()")
+        exec(f"self.{self.method}()")
+        return self.offset
 
     def follow(self):
         self.offset.x += self.player.rect.x - self.offset.x + self.MIDDLE.x
@@ -74,8 +76,11 @@ class Player(pygame.sprite.Sprite):
         self.velocity = pygame.Vector2(0, 0)
         self.speed = 5
 
-    def update(self, dt):
+    def update(self, dt, camera_offset):
         self.movement(dt)
+
+        self.pos.xy += -camera_offset
+        self.rect.topleft = self.pos.xy
 
     def render(self):
         self.canvas.blit(self.image, self.pos.xy)
@@ -100,11 +105,12 @@ class Tile(pygame.sprite.Sprite):
     def __init__(self, pos, image):
         super().__init__()
         self.size = (100,100)
-        self.pos = [pos[0]*self.size[0], pos[1]*self.size[1]]
+        self.pos = pygame.Vector2(pos[0]*self.size[0], pos[1]*self.size[1])
         self.pos[0] += -400
         self.image = image
         self.image = pygame.transform.scale(self.image, self.size)
         self.rect = self.image.get_rect(topleft = self.pos)
 
-    def update(self, player_pos):
-        pass
+    def update(self, camera_offset):
+        self.pos.xy += -camera_offset
+        self.rect.topleft = self.pos.xy

@@ -32,7 +32,7 @@ class MapMenu(Phase):
         printname = lambda name: print(name)
         self.buttonpanel = MenuButtonPanel(canvas, listener, (200, 100), 6, 20, 
             ["Dev Map", "Map 1", "Map 2", "Map 3", "Map 4", "Map 5"],
-            [lambda: Game(canvas, listener), lambda: print("Map 1"), lambda: print("Map 2"), 
+            [lambda: Game(canvas, listener).enter_phase(), lambda: print("Map 1"), lambda: print("Map 2"), 
             lambda: print("Map 3"), lambda: print("Map 4"), lambda: print("Map 5")]
         )
 
