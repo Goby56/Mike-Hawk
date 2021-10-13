@@ -37,6 +37,11 @@ menubutton = pygame.image.load(_menu_dir)
 
 # Loading sprites
 from .spritesheet import Spritesheet
-spritesheet = Spritesheet("dynamite") # Create object of file path
-data = spritesheet.parse_sprite() # Get meta data from sheet
-frames = spritesheet.get_frames(data) # Get sequence of frames
+
+def load_frames(filename):
+    spritesheet = Spritesheet(filename) # Create object of file path
+    data = spritesheet.parse_sprite() # Get meta data from sheet
+    frames = spritesheet.get_frames(data) # Get sequence of frames
+    return frames
+
+frames = load_frames("dynamite")
