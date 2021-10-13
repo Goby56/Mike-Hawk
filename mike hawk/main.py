@@ -36,6 +36,7 @@ class Main:
         self._previous_time = current_time
 
 
+
 if __name__ == "__main__":
     main = Main()
     while True:
