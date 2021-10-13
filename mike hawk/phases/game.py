@@ -37,7 +37,7 @@ class Game(Phase):
         for r, row in enumerate(data["map"]):
             for c, tile in enumerate(row):
                 if tile == 1:
-                    self.tiles.add(Tile((c,r), tile_frames[4]))
+                    self.tiles.add(Tile((c,r), tile_frames[13]))
 
 class Camera:
     def __init__(self, player, canvas):
@@ -87,14 +87,11 @@ class Player(pygame.sprite.Sprite):
 
     def movement(self, dt):
         if self.listener.key_pressed("a", hold=True):
-            print("dpws")
             self.velocity.x = -self.speed
         if self.listener.key_pressed("d", hold=True):
-            print("dpws")
             self.velocity.x = self.speed
 
         if self.listener.key_up("a") or self.listener.key_up("d"):
-            print("up")
             self.velocity.x = 0
 
         self.pos.x += self.velocity.x

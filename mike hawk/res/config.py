@@ -45,4 +45,4 @@ def load_frames(filename):
     return frames
 
 dynamite_frames = load_frames("dynamite")
-tile_frames = load_frames("8x8")
+tile_frames = load_frames("dev_tiles")
