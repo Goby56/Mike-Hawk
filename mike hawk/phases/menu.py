@@ -6,7 +6,7 @@ from .game import Game
 from res.widgets import MenuButton
 from res.config import frames
 
-class Menu(Phase):
+class MainMenu(Phase):
     def __init__(self, canvas, listener, dt):
         self.canvas, self.listener, self.dt = canvas, listener, dt
 

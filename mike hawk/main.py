@@ -2,7 +2,7 @@ import pygame, time
 from listener import Listener
 from res.config import *
 from phases.phase import Phase
-from phases.menu import Menu
+from phases.menu import MainMenu
 
 pygame.font.init()      
 
@@ -14,13 +14,11 @@ class Main:
         self.dt = 0
         self.canvas = pygame.Surface(SCREENSIZE)
         self.listener = Listener()
-        Menu(self.canvas, self.listener, self.dt).enter_phase()
+        MainMenu(self.canvas, self.listener, self.dt).enter_phase()
 
     def main_loop(self):
         self.canvas.fill(colors["black magic"])
         self.listener.listen()
-
-        print(Phase.phase_stack)
         
         Phase.get_current().update()
         Phase.get_current().render()
