@@ -11,8 +11,8 @@ class Phase:
     def exit_phase(self): # Exits to the previous state
         Phase.phase_stack.pop()
 
-    def update(self, listener, dt):
+    def update(self, dt):
         pass
 
-    def render(self, canvas):
+    def render(self):
         pass
