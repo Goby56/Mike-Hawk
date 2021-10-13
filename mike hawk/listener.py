@@ -1,4 +1,5 @@
 import pygame
+from pygame.constants import KEYUP
 from res.config import PYGAME_CAPS_KEYS
 
 class Listener:
@@ -13,6 +14,7 @@ class Listener:
         self._keys = []
         self._events = []
         self._mouse = []
+        self._keys_up = []
         self._counter1, self._counter2 = 0, 0
         self._counter3, self._counter4 = 0, 0
         self._last_key = None
@@ -20,14 +22,18 @@ class Listener:
 
     def listen(self):
         self._keys, self._events, self._mouse = [], [], []
+        self._keys_up = []
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self._events.append("quit")
             if event.type == pygame.KEYDOWN:
                 self._keys.append(pygame.key.name(event.key))
+            if event.type == pygame.KEYUP:
+                self._keys_up.append(pygame.key.name(event.key))
             if event.type == pygame.MOUSEBUTTONDOWN:
                 self._mouse.append(event.button)
+            
 
     def key_hold(self, key: str, duration: int): # fix for multible holds
         current_key = self.key_pressed(key, hold=True)
@@ -55,6 +61,11 @@ class Listener:
             return False
 
         if keys[eval(f"pygame.K_{key}")] and self._counter1 % trigger == 0:
+            return True
+        return False
+
+    def key_up(self, key):
+        if key in self._keys_up:
             return True
         return False
 

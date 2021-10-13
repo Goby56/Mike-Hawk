@@ -48,6 +48,9 @@ class Player(pygame.sprite.Sprite):
         self.image = pygame.image.load(os.path.join(sprite_dir, "mike.png"))
         self.rect = self.image.get_rect(topleft = self.pos)
 
+        self.velocity = pygame.Vector2(0, 0)
+        self.speed = 5
+
     def update(self, listener, dt):
         self.movement(listener, dt)
 
@@ -55,12 +58,19 @@ class Player(pygame.sprite.Sprite):
         canvas.blit(self.image, self.pos.xy)
 
     def movement(self, listener, dt):
-        if listener.key_pressed("a"):
-            self.pos.x += -150
-        if listener.key_pressed("d"):
-            self.pos.x += 150
+        if listener.key_pressed("a", hold=True):
+            print("dpws")
+            self.velocity.x = -self.speed
+        if listener.key_pressed("d", hold=True):
+            print("dpws")
+            self.velocity.x = self.speed
 
-        self.rect.x = self.pos.x
+        if listener.key_up("a") or listener.key_up("d"):
+            print("up")
+            self.velocity.x = 0
+
+        self.pos.x += self.velocity.x
+        self.pos.y += self.velocity.y
         
 
 class Tile(pygame.sprite.Sprite):
