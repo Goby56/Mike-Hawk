@@ -12,12 +12,21 @@ class Main:
         self._clock = pygame.time.Clock()
         self._previous_time = time.time()
         self.dt = 0
+        self.timers = {}
         self.canvas = pygame.Surface(SCREENSIZE)
         self.listener = Listener()
         MainMenu(self.canvas, self.listener, self.dt).enter_phase()
 
     def main_loop(self):
+<<<<<<< Updated upstream
         self.canvas.fill(colors["white knight"])
+=======
+        self.get_dt()
+        for timer in self.timers:
+            timer += self.dt
+        
+        self.canvas.fill(colors["black magic"])
+>>>>>>> Stashed changes
         self.listener.listen()
         
         Phase.get_current().update()
