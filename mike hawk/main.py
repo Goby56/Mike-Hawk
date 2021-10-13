@@ -18,18 +18,12 @@ class Main:
         MainMenu(self.canvas, self.listener, self.dt).enter_phase()
 
     def main_loop(self):
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
         self.canvas.fill(colors["white knight"])
-=======
-=======
->>>>>>> Stashed changes
+
         self.get_dt()
         for timer in self.timers:
             timer += self.dt
-        
-        self.canvas.fill(colors["black magic"])
->>>>>>> Stashed changes
+
         self.listener.listen()
         
         Phase.get_current().update()
@@ -46,7 +40,6 @@ class Main:
         current_time = time.time()
         self.dt = current_time - self._previous_time
         self._previous_time = current_time
-
 
 
 if __name__ == "__main__":
