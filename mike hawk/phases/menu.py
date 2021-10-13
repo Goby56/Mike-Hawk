@@ -29,7 +29,6 @@ class MainMenu(Phase):
 
 class MapMenu(Phase):
     def __init__(self, canvas, listener):
-        printname = lambda name: print(name)
         self.buttonpanel = MenuButtonPanel(canvas, listener, (200, 100), 6, 20, 
             ["Dev Map", "Map 1", "Map 2", "Map 3", "Map 4", "Map 5"],
             [lambda: Game(canvas, listener).enter_phase(), lambda: print("Map 1"), lambda: print("Map 2"), 
@@ -38,7 +37,6 @@ class MapMenu(Phase):
 
     def update(self, dt):
         self.buttonpanel.update()
-
 
 
 class OptionsMenu(Phase):
