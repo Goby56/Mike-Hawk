@@ -19,8 +19,11 @@ class Main:
 
     def main_loop(self):
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
         self.canvas.fill(colors["white knight"])
 =======
+=======
+>>>>>>> Stashed changes
         self.get_dt()
         for timer in self.timers:
             timer += self.dt
