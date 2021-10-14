@@ -8,6 +8,26 @@ from res.widgets import MenuButton
 import json, os
 from res.config import tile_frames, sprite_dir, dev_level
 
+def xcollision(rect1, rect2, temp):
+    pygame.draw.rect(temp, (255, 0, 0), rect1)
+    if not rect1.colliderect(rect2):
+        return False
+    if rect1.left < rect2.right:
+        return True
+    elif rect1.right > rect2.left:
+        return True
+    return False
+
+def ycollision(rect1, rect2):
+    if not rect1.colliderect(rect2):
+        return False
+    if rect1.top < rect2.bottom:
+        return True
+    elif rect1.bottom > rect2.top:
+        return True
+    return False
+
+
 class Game(Phase):
     def __init__(self, canvas, listener):
         self.canvas = canvas
@@ -19,13 +39,15 @@ class Game(Phase):
         self.place_tiles()
 
         self.player = Player(listener, canvas, (300,300))
-        self.player_collisions = {"tiles": []}
+        self.player_collisions = {"x_tiles": [], "y_tiles": []}
         self.camera = Camera(self.player, canvas)
 
     def update(self, dt):
         camera_offset = self.camera.get_offset()
+        self.player_collisions["x_tiles"] = []
+        self.player_collisions["y_tiles"] = []
 
-        self.player_collisions["tiles"] = pygame.sprite.spritecollide(self.player, self.tiles, dokill=False)
+        self.get_collisions()
         self.player.update(dt, camera_offset, self.player_collisions)
 
         self.tiles.update(camera_offset)
@@ -40,6 +62,16 @@ class Game(Phase):
         for r, row in enumerate(level):
             for c, tile in enumerate(row):
                 if tile: self.tiles.add(Tile((c,r), tile_frames[tile-1]))
+
+    def get_collisions(self):
+        for sprite in self.tiles:
+            if xcollision(self.player.x_mask, sprite.rect, self.canvas):
+                print(xcollision(self.player.x_mask, sprite.rect, self.canvas), self.player.x_mask)
+                self.player_collisions["x_tiles"].append(sprite.rect)
+            if ycollision(self.player.rect, sprite.rect):
+                self.player_collisions["y_tiles"].append(sprite.rect)
+
+
 
 class Camera:
     def __init__(self, player, canvas):
@@ -74,6 +106,7 @@ class Player(pygame.sprite.Sprite):
         self.pos = pygame.Vector2(pos)
         self.image = pygame.image.load(os.path.join(sprite_dir, "mike.png"))
         self.rect = self.image.get_rect(topleft = self.pos)
+        self.x_mask = pygame.Rect(self.rect.topleft, (self.rect.width, self.rect.height-10))
         self.collisions = {"right":False, "left":False, "top":False, "bottom":False}
         self.velocity = pygame.Vector2(0, 0)
         self.speed = 5
@@ -81,9 +114,9 @@ class Player(pygame.sprite.Sprite):
 
     def update(self, dt, camera_offset, collisions):
         self.horizontal_movement(dt)
-        self.handle_collisions(collisions["tiles"], axis=0)
+        self.handle_collisions(collisions, "x_tiles")
         self.vertical_movement(dt)
-        self.handle_collisions(collisions["tiles"], axis=1)
+        self.handle_collisions(collisions, "y_tiles")
         self.pos.xy += -camera_offset
         self.rect.topleft = self.pos.xy
 
@@ -101,35 +134,38 @@ class Player(pygame.sprite.Sprite):
 
         self.pos.x += self.velocity.x
         self.rect.x = self.pos.x
+        self.x_mask.center = self.rect.center
 
     def vertical_movement(self, dt):
         self.velocity.y += self.gravity
         self.pos.y += self.velocity.y
         self.rect.y = self.pos.y
 
-    def handle_collisions(self, collision_list, axis):
-            if collision_list:
-                for tile in collision_list:
-                    if axis:
-                        if self.velocity.y > 0: self.rect.bottom = tile.rect.top
-                        elif self.velocity.y < 0: self.rect.top = tile.rect.bottom
-                        self.velocity.y = 0
-                    else:
-                        if self.velocity.x < 0 and self.rect.bottom != tile.rect.top: 
-                            self.rect.left = tile.rect.right
-                        elif self.velocity.x > 0 and self.rect.bottom != tile.rect.top: 
-                            self.rect.right = tile.rect.left
-                        self.velocity.x = 0
-                self.pos.xy = self.rect.topleft
-
-            # if axis == 1:
-            #     for sprite in collision_list:
-            #         if self.velocity.y > 0:
-            #             self.rect.bottom = sprite.rect.top
+    def handle_collisions(self, player_collisions, cset):
+            # if collision_list:
+            #     for tile in collision_list:
+            #         if axis:
+            #             if self.velocity.y > 0: self.rect.bottom = tile.rect.top
+            #             elif self.velocity.y < 0: self.rect.top = tile.rect.bottom
             #             self.velocity.y = 0
-            #         elif self.velocity.y < 0:
-            #             self.rect.top = sprite.rect.bottom
-            # self.pos.y = self.rect.y
+            #         else:
+            #             if self.velocity.x < 0 and self.rect.bottom != tile.rect.top: 
+            #                 self.rect.left = tile.rect.right
+            #             elif self.velocity.x > 0 and self.rect.bottom != tile.rect.top: 
+            #                 self.rect.right = tile.rect.left
+            #             self.velocity.x = 0
+            #     self.pos.xy = self.rect.topleft
+            for tile in player_collisions[cset]:
+                if cset == "x_tiles":
+                    if self.velocity.x < 0: self.rect.left = tile.right
+                    elif self.velocity.x > 0: self.rect.right = tile.left
+                    self.velocity.x = 0
+                elif cset == "y_tiles":
+                    if self.velocity.y > 0: self.rect.bottom = tile.top
+                    elif self.velocity.y < 0: self.rect.top = tile.bottom
+                    self.velocity.y = 0
+            self.pos.xy = self.rect.topleft 
+
 
 class Tile(pygame.sprite.Sprite):
     def __init__(self, pos, image):
