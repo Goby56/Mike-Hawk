@@ -1,5 +1,7 @@
 import pygame, os, json
-from .config import sprite_dir
+
+base_dir = os.path.abspath(os.path.dirname(__file__))
+asset_dir = os.path.join(base_dir, "assets")
 
 class Spritesheet:
     """
@@ -12,9 +14,9 @@ class Spritesheet:
     """
     def __init__(self, filename):
         self.filename = filename
-        self.file_path = os.path.join(sprite_dir, filename)
+        self.file_path = os.path.join(asset_dir, filename)
         self.sprite_sheet = pygame.image.load(self.file_path + ".png")#.convert()
-        self.meta_data = os.path.join(sprite_dir, self.filename + ".json")
+        self.meta_data = os.path.join(asset_dir, self.filename + ".json")
         with open(self.meta_data) as f:
             self.data = json.load(f)
 
