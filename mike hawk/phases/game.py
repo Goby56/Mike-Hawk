@@ -6,7 +6,7 @@ from res.widgets import MenuButton
 
 # temp import
 import json, os
-from res.config import tile_frames, sprite_dir, dev_level
+from res.config import tile_frames, sprite_dir, dev_level, game_vars
 
 def xcollision(rect1, rect2, temp):
     pygame.draw.rect(temp, (255, 0, 0), rect1)
@@ -91,12 +91,12 @@ class Player(pygame.sprite.Sprite):
         self.listener = listener
         self.canvas = canvas
         self.pos = pygame.Vector2(pos)
-        self.image = pygame.image.load(os.path.join(sprite_dir, "mike.png"))
+        self.image = pygame.transform.scale(pygame.image.load(os.path.join(sprite_dir, "mike.png")), (28*2, 72*2))
         self.rect = self.image.get_rect(midbottom=self.pos)
         self.collisions = {"right":False, "left":False, "top":False, "bottom":False}
         self.velocity = pygame.Vector2(0, 0)
-        self.speed = 5
-        self.gravity = 0.1
+        self.speed = game_vars["speed"]
+        self.gravity = game_vars["gravity"]
         self.onground = False
 
     def update(self, dt, collisions_objects, camera):
@@ -107,7 +107,7 @@ class Player(pygame.sprite.Sprite):
         #self.pos.xy += -camera_offset
 
     def render(self):
-        pygame.draw.rect(self.canvas, (255, 0, 0), self.rect)
+        #pygame.draw.rect(self.canvas, (255, 0, 0), self.rect)
         self.canvas.blit(self.image, self.pos.xy)
 
     def horizontal_movement(self, dt):
@@ -123,6 +123,9 @@ class Player(pygame.sprite.Sprite):
         self.rect.x = self.pos.x
 
     def vertical_movement(self, dt):
+        if self.listener.key_pressed("space") and self.onground: # set onground to False
+            self.velocity.y = -game_vars["jump strength"]
+        
         self.velocity.y += self.gravity
         self.pos.y += self.velocity.y
         self.rect.y = self.pos.y

@@ -15,6 +15,12 @@ colors = {
     "white knight": (200, 200, 200)
 }
 
+game_vars = {
+    "gravity": 0.5,
+    "jump strength": 12,
+    "speed": 5
+}
+
 import ctypes
 SCREENSIZE = ctypes.windll.user32.GetSystemMetrics(0), ctypes.windll.user32.GetSystemMetrics(1)
 SCREENSIZE = (800, 700)
