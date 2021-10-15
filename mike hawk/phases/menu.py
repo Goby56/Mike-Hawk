@@ -1,6 +1,4 @@
 import pygame, sys
-
-from pygame.transform import rotate
 sys.path.append("..")
 
 from .phase import Phase
