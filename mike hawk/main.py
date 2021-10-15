@@ -23,7 +23,7 @@ class Main:
 
         self.get_dt()
         for timer in self.timers:
-            timer += self.dtd
+            timer += self.dt
         
         Phase.get_current().update(self.dt)
         Phase.get_current().render()

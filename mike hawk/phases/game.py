@@ -17,7 +17,8 @@ class Game(Phase):
         self.backbutton = MenuButton(canvas, listener, (100, 150), "Pop Phase",
             command=self.exit_phase)
         self.tiles = pygame.sprite.Group()
-        self.place_tiles()
+        self.tile_size = 100
+        self.place_tiles(self.tile_size)
 
         self.player = Player(listener, canvas, (300,300))
         self.camera = Camera(self.player, canvas)
@@ -25,10 +26,10 @@ class Game(Phase):
         self.scroll = pygame.Vector2(0, 0)
 
     def update(self, dt):
-        camera_offset = self.camera.get_offset()
-        self.get_scroll(200, 350)
+        self.get_scroll(350, 350)
 
         self.player.update(dt, self.tiles, self.scroll)
+        self.limit_player()
 
         self.tiles.update(self.scroll)
         self.backbutton.update()
@@ -37,16 +38,29 @@ class Game(Phase):
         self.tiles.draw(self.canvas)
         self.player.render()
 
-    def place_tiles(self):
+    def place_tiles(self, size):
         level = dev_level["map"]
         for r, row in enumerate(level):
             for c, tile in enumerate(row):
-                if tile: self.tiles.add(Tile((c,r), tile_frames[tile-1]))
+                if tile: self.tiles.add(Tile((c,r), size, tile_frames[tile-1]))
+
+    def get_world_dimensions(self):
+        return len(dev_level["map"][0])*self.tile_size, len(dev_level["map"])*self.tile_size
+
+    def limit_player(self):
+        if self.player.pos.x > self.canvas.get_width() - self.player.width:
+            self.player.pos.x = self.canvas.get_width() - self.player.width
+        if self.player.pos.x < 0:
+            self.player.pos.x = 0
 
     def get_scroll(self, x_offset, y_offset):
-        if self.player.abs_x < x_offset:
+        if self.player.abs_x < x_offset - self.player.width/2:
             self.scroll.x = 0
             return
+        elif self.player.abs_x > self.get_world_dimensions()[0] - x_offset - self.player.width/2:
+            self.scroll.x = 0
+            return
+            
         right_bound, left_bound = self.canvas.get_width() - x_offset, x_offset
         if not left_bound < self.player.rect.centerx < right_bound:
             self.scroll.x = self.player.velocity.x
@@ -54,7 +68,7 @@ class Game(Phase):
             self.scroll.x = 0
 
 
-class Camera:
+class Camera: # dont remove, want to improve
     def __init__(self, player, canvas):
         self.player = player
         self.offset = pygame.Vector2(0,0)
@@ -85,9 +99,12 @@ class Player(pygame.sprite.Sprite):
         self.listener = listener
         self.canvas = canvas
         self.pos = pygame.Vector2(pos)
-        self.image = pygame.transform.scale(pygame.image.load(os.path.join(sprite_dir, "mike.png")), (28*2, 72*2))
+        self.image = pygame.transform.scale(pygame.image.load(os.path.join(sprite_dir,
+             "mike.png")), (28*2, 72*2))
+        self.width, self.height = self.image.get_width(), self.image.get_height()
         self.rect = self.image.get_rect(midbottom=self.pos)
         self.collisions = {"right":False, "left":False, "top":False, "bottom":False}
+        self.acceleration = pygame.Vector2(0, game_vars["gravity"])
         self.velocity = pygame.Vector2(0, 0)
         self.onground = False
         self.total_scroll = pygame.Vector2(0, 0)
@@ -103,42 +120,55 @@ class Player(pygame.sprite.Sprite):
     def update(self, dt, collisions_objects, scroll):
         self.total_scroll.xy -= scroll.xy
         self.pos.xy -= scroll.xy
+
         self.horizontal_movement(dt)
         self.handle_collisions(self.get_collisions(collisions_objects), axis=0)
         self.vertical_movement(dt)
         self.handle_collisions(self.get_collisions(collisions_objects), axis=1)
-        #self.pos.xy += -camera_offset
         
     def render(self):
-        #pygame.draw.rect(self.canvas, (255, 0, 0), self.rect)
         self.canvas.blit(self.image, self.pos.xy)
 
     def horizontal_movement(self, dt):
-        if self.listener.key_pressed("a", hold=True):
-            self.velocity.x = -game_vars["speed"]
-        if self.listener.key_pressed("d", hold=True):
-            self.velocity.x = game_vars["speed"]
+        dt *= 60
+        key_a = self.listener.key_pressed("a", hold=True)
+        key_d = self.listener.key_pressed("d", hold=True)
+        direction = key_d - key_a
+        self.acceleration.x = game_vars["speed"]*direction
 
-        if self.listener.key_up("a") or self.listener.key_up("d"):
-            self.velocity.x = 0
+        self.velocity.x += dt*(self.acceleration.x + self.velocity.x*game_vars["friction"])
+        print(self.velocity.x)
+        self.limit_velocity(game_vars["max_vel"])
+        self.pos.x += self.velocity.x*dt + 0.5*(self.acceleration.x * dt**2)
 
-        self.pos.x += self.velocity.x
         self.rect.x = self.pos.x
 
     def vertical_movement(self, dt):
-        if self.listener.key_pressed("space") and self.onground: # set onground to False
+        dt *= 60
+        if self.listener.key_pressed("space", hold=True) and self.onground: # set onground to False
             self.velocity.y = -game_vars["jump strength"]
+        self.onground = False
+
+        self.velocity.y += self.acceleration.y*dt
+        self.pos.y += self.velocity.y*dt + 0.5*(self.acceleration.y * dt**2)
         
-        self.velocity.y += game_vars["gravity"]
-        self.pos.y += self.velocity.y
         self.rect.y = self.pos.y
+
+    def limit_velocity(self, max_velocity):
+        if abs(self.velocity.x) > max_velocity:
+            self.velocity.x = max_velocity if self.velocity.x > 0 else -max_velocity 
+        if abs(self.velocity.x) < 0.1: self.velocity.x = 0
 
     def handle_collisions(self, tile_collisions, axis):
         if tile_collisions:
             for tile in tile_collisions:
                 if axis == 0:
-                    if self.velocity.x > 0: self.rect.right = tile.rect.left
-                    elif self.velocity.x < 0: self.rect.left = tile.rect.right
+                    if self.velocity.x > 0: 
+                        self.rect.right = tile.rect.left
+                        self.velocity.x = 0
+                    elif self.velocity.x < 0: 
+                        self.rect.left = tile.rect.right
+                        self.velocity.x = 0
                 elif axis == 1:
                     if self.velocity.y > 0:
                         self.rect.bottom = tile.rect.top
@@ -155,11 +185,10 @@ class Player(pygame.sprite.Sprite):
 
 
 class Tile(pygame.sprite.Sprite):
-    def __init__(self, pos, image):
+    def __init__(self, pos, size, image):
         super().__init__()
-        self.size = (100,100)
+        self.size = size, size
         self.pos = pygame.Vector2(pos[0]*self.size[0], pos[1]*self.size[1])
-        #.pos[0] += -600
         self.image = image
         self.image = pygame.transform.scale(self.image, self.size)
         self.rect = self.image.get_rect(topleft = self.pos)
@@ -174,7 +203,6 @@ class Tile(pygame.sprite.Sprite):
         return self.pos.y - self.total_scroll.y
 
     def update(self, scroll):
-        #self.pos.xy += -camera_offset
         self.total_scroll.xy -= scroll.xy
         self.pos.xy -= scroll.xy
         self.rect.topleft = self.pos.xy

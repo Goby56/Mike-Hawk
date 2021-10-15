@@ -18,7 +18,9 @@ colors = {
 game_vars = {
     "gravity": 0.5,
     "jump strength": 12,
-    "speed": 5
+    "speed": 1.5,
+    "friction": -0.2,
+    "max_vel": 6
 }
 
 import ctypes
