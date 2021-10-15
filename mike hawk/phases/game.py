@@ -43,9 +43,8 @@ class Game(Phase):
 
     def update(self, dt):
         camera_offset = self.camera.get_offset()
-        player_tile_collisions = self.get_collisions(self.player, self.tiles)
 
-        self.player.update(dt, camera_offset, player_tile_collisions)
+        self.player.update(dt, self.tiles, camera_offset)
 
         self.tiles.update(camera_offset)
         self.backbutton.update()
@@ -59,15 +58,6 @@ class Game(Phase):
         for r, row in enumerate(level):
             for c, tile in enumerate(row):
                 if tile: self.tiles.add(Tile((c,r), tile_frames[tile-1]))
-
-    def get_collisions(self, obj, group):
-        collision_list = []
-        for sprite in group:
-            if obj.rect.colliderect(sprite.rect):
-                collision_list.append(sprite)
-        return collision_list
-
-
 
 
 class Camera:
@@ -102,23 +92,21 @@ class Player(pygame.sprite.Sprite):
         self.canvas = canvas
         self.pos = pygame.Vector2(pos)
         self.image = pygame.image.load(os.path.join(sprite_dir, "mike.png"))
-        self.rect = self.image.get_rect(midbottom = self.pos)
-        self.x_mask = pygame.Rect(self.rect.topleft, (self.rect.width, self.rect.height-10))
+        self.rect = self.image.get_rect(midbottom=self.pos)
         self.collisions = {"right":False, "left":False, "top":False, "bottom":False}
         self.velocity = pygame.Vector2(0, 0)
         self.speed = 5
         self.gravity = 0.1
 
-    def update(self, dt, camera_offset, collisions):
+    def update(self, dt, collisions_objects, camera):
         self.horizontal_movement(dt)
-        self.handle_collisions(collisions, axis=0)
+        self.handle_collisions(self.get_collisions(collisions_objects), axis=0)
         self.vertical_movement(dt)
-        self.handle_collisions(collisions, axis=1)
-        
+        self.handle_collisions(self.get_collisions(collisions_objects), axis=1)
         #self.pos.xy += -camera_offset
-        self.rect.midbottom = self.pos.xy
 
     def render(self):
+        pygame.draw.rect(self.canvas, (255, 0, 0), self.rect)
         self.canvas.blit(self.image, self.pos.xy)
 
     def horizontal_movement(self, dt):
@@ -131,33 +119,37 @@ class Player(pygame.sprite.Sprite):
             self.velocity.x = 0
 
         self.pos.x += self.velocity.x
-        self.rect.centerx = self.pos.x
-        self.x_mask.center = self.rect.center
+        self.rect.x = self.pos.x
 
     def vertical_movement(self, dt):
         self.velocity.y += self.gravity
         self.pos.y += self.velocity.y
-        self.rect.bottom = self.pos.y
+        self.rect.y = self.pos.y
 
     def handle_collisions(self, tile_collisions, axis):
         if len(tile_collisions) > 0:
             if axis == 0:
                 for tile in tile_collisions:
                     if self.velocity.x > 0:
-                        self.rect.right = tile.rect.left
-                        self.velocity.x = 0
+                        self.rect.right = tile.left
                     if self.velocity.x < 0:
-                        self.rect.left = tile.rect.right
-                        self.velocity.x = 0
-            if axis == 1:
+                        self.rect.left = tile.right
+
+            elif axis == 1:
                 for tile in tile_collisions:
                     if self.velocity.y > 0:
-                        self.rect.bottom = tile.rect.top
+                        self.rect.bottom = tile.top
                         self.velocity.y = 0
                     if self.velocity.y < 0:
-                        self.rect.top = tile.rect.bottom
-                        self.velocity.y = 0
-            self.pos.xy = self.rect.midbottom
+                        self.rect.top = tile.bottom
+            self.pos.xy = self.rect.topleft
+
+    def get_collisions(self, group):
+        collision_list = []
+        for sprite in group:
+            if self.rect.colliderect(sprite.rect):
+                collision_list.append(sprite.rect)
+        return collision_list
 
 
 class Tile(pygame.sprite.Sprite):
