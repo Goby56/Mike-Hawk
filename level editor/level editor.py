@@ -6,6 +6,10 @@ SCREENSIZE = [ctypes.windll.user32.GetSystemMetrics(0), ctypes.windll.user32.Get
 SCREENSIZE[0] //= 2
 SCREENSIZE[1] //= 2
 
+# utgå nere från vänstra hörn
+# fixa så man kan ta bort tiles
+# när man sparar ta bort allt onödigt tomma tiles
+
 base_dir = os.path.abspath(os.path.dirname(__file__))
 map_dir = os.path.join(base_dir, "maps")
 
@@ -30,13 +34,15 @@ def load_frames(filename):
 
 class Tile:
     tiles = []
-    def __init__(self, canvas, rect, tile):
-        self.surf = tile.frame
-        self.rect = rect
+    def __init__(self, canvas, pos, frame):
+        self.frame = frame
+        self.x, self.y = pos
         self.canvas = canvas
+        Tile.tiles.append(self)
 
-    def update(self):
-        self.canvas.blit(self.surf, self.rect.topleft)
+    def update(self, width):
+        surf = pygame.transform.scale(self.frame, (width, width))
+        self.canvas.blit(surf, (self.x*width, self.y*width))
 
 
 class App:
@@ -71,8 +77,11 @@ class App:
     def main(self):
         self.render()
         self.update()
-        self.events()
         self.draw_lines()
+        self.events()
+
+        for tile in Tile.tiles:
+            tile.update(self.tile_width)
         
         self.display.blit(self.canvas, (0, 0))
         pygame.display.update()
@@ -82,8 +91,6 @@ class App:
         self.tile_width += self.scroll
         self.scroll = 0
         self.panel.update(self.canvas, self.panel_rect.x)
-        for tile in Tile.tiles:
-            tile.update()
 
     def render(self):
         self.canvas.fill((0, 0, 0))
@@ -109,11 +116,12 @@ class App:
                     self.place_tile(pygame.mouse.get_pos())
 
     def place_tile(self, mouse):
+        if not self.grid_rect.collidepoint(mouse[0], mouse[1]):
+            return
         x, y = int(mouse[0] / self.tile_width)*self.tile_width, int(mouse[1] / self.tile_width)*self.tile_width
-        tile = self.panel.get_selected()
-        if self.grid_rect.collidepoint(x, y):
-            pygame.draw.rect(self.canvas, (255, 0, 0), (x, y, self.tile_width, self.tile_width))
-            Tile(self.canvas, pygame.Rect((x,y), (tile.frame.get_size())), tile)
+        index = self.panel.get_selected().i
+        pygame.draw.rect(self.canvas, (255, 0, 0), (x, y, self.tile_width, self.tile_width))
+        Tile(self.canvas, (x/self.tile_width, y/self.tile_width), self.frames[index])
 
     def save(self):
         with open(self.map_path, "w") as file:
@@ -123,9 +131,10 @@ class App:
 class PanelTile(pygame.Surface):
     tiles = []
 
-    def __init__(self, dim, frame):
+    def __init__(self, dim, frame, i):
         super().__init__((dim[0] + 2, dim[1] + 2))
         self.frame = frame
+        self.i = i
         self.rect = self.get_rect()
         self.selected = False
         PanelTile.tiles.append(self)
@@ -168,9 +177,9 @@ class Panel:
         self.tile_width = int((self.width-4*self.padding)/3)
 
         self.frames = []
-        for frame in frames:
+        for i, frame in enumerate(frames):
             frame = pygame.transform.scale(frame, (self.tile_width, self.tile_width))
-            self.frames.append(PanelTile(frame.get_size(), frame))
+            self.frames.append(PanelTile(frame.get_size(), frame, i))
         self.frames[0].selected = True
 
         self.canvas = pygame.Surface((width, height))
