@@ -111,8 +111,8 @@ class App:
     def place_tile(self, mouse):
         x, y = int(mouse[0] / self.tile_width)*self.tile_width, int(mouse[1] / self.tile_width)*self.tile_width
         tile = self.panel.get_selected()
-        pygame.draw.rect(self.canvas, (255, 0, 0), (x, y, self.tile_width, self.tile_width))
         if self.grid_rect.collidepoint(x, y):
+            pygame.draw.rect(self.canvas, (255, 0, 0), (x, y, self.tile_width, self.tile_width))
             Tile(self.canvas, pygame.Rect((x,y), (tile.frame.get_size())), tile)
 
     def save(self):
