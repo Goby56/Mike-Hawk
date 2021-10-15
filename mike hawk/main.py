@@ -33,7 +33,7 @@ class Main:
 
         self._display.blit(self.canvas, (0, 0))
         pygame.display.update()
-        self._clock.tick(60)
+        self._clock.tick(10)
 
     def get_dt(self):
         current_time = time.time()
