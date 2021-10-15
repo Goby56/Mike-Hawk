@@ -97,6 +97,7 @@ class Player(pygame.sprite.Sprite):
         self.velocity = pygame.Vector2(0, 0)
         self.speed = 5
         self.gravity = 0.1
+        self.onground = False
 
     def update(self, dt, collisions_objects, camera):
         self.horizontal_movement(dt)
@@ -127,29 +128,22 @@ class Player(pygame.sprite.Sprite):
         self.rect.y = self.pos.y
 
     def handle_collisions(self, tile_collisions, axis):
-        if len(tile_collisions) > 0:
-            if axis == 0:
-                for tile in tile_collisions:
-                    if self.velocity.x > 0:
-                        self.rect.right = tile.left
-                    if self.velocity.x < 0:
-                        self.rect.left = tile.right
-
-            elif axis == 1:
-                for tile in tile_collisions:
+        if tile_collisions:
+            for tile in tile_collisions:
+                if axis == 0:
+                    if self.velocity.x > 0: self.rect.right = tile.rect.left
+                    elif self.velocity.x < 0: self.rect.left = tile.rect.right
+                elif axis == 1:
                     if self.velocity.y > 0:
-                        self.rect.bottom = tile.top
+                        self.rect.bottom = tile.rect.top
                         self.velocity.y = 0
-                    if self.velocity.y < 0:
-                        self.rect.top = tile.bottom
+                        self.onground = True
+                    elif self.velocity.y < 0: self.rect.top = tile.rect.bottom
             self.pos.xy = self.rect.topleft
 
     def get_collisions(self, group):
-        collision_list = []
-        for sprite in group:
-            if self.rect.colliderect(sprite.rect):
-                collision_list.append(sprite.rect)
-        return collision_list
+        collisions = pygame.sprite.spritecollide(self, group, False)
+        return collisions
 
 
 class Tile(pygame.sprite.Sprite):
