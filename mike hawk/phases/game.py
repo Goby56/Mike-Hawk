@@ -8,25 +8,6 @@ from res.widgets import MenuButton
 import json, os
 from res.config import tile_frames, sprite_dir, dev_level, game_vars
 
-def xcollision(rect1, rect2, temp):
-    pygame.draw.rect(temp, (255, 0, 0), rect1)
-    if not rect1.colliderect(rect2):
-        return False
-    if rect1.left < rect2.right:
-        return True
-    elif rect1.right > rect2.left:
-        return True
-    return False
-
-def ycollision(rect1, rect2):
-    if not rect1.colliderect(rect2):
-        return False
-    if rect1.top < rect2.bottom:
-        return True
-    elif rect1.bottom > rect2.top:
-        return True
-    return False
-
 
 class Game(Phase):
     def __init__(self, canvas, listener):
@@ -41,12 +22,15 @@ class Game(Phase):
         self.player = Player(listener, canvas, (300,300))
         self.camera = Camera(self.player, canvas)
 
+        self.scroll = pygame.Vector2(0, 0)
+
     def update(self, dt):
         camera_offset = self.camera.get_offset()
+        self.get_scroll(200, 350)
 
-        self.player.update(dt, self.tiles, camera_offset)
+        self.player.update(dt, self.tiles, self.scroll)
 
-        self.tiles.update(camera_offset)
+        self.tiles.update(self.scroll)
         self.backbutton.update()
 
     def render(self):
@@ -58,6 +42,16 @@ class Game(Phase):
         for r, row in enumerate(level):
             for c, tile in enumerate(row):
                 if tile: self.tiles.add(Tile((c,r), tile_frames[tile-1]))
+
+    def get_scroll(self, x_offset, y_offset):
+        if self.player.abs_x < x_offset:
+            self.scroll.x = 0
+            return
+        right_bound, left_bound = self.canvas.get_width() - x_offset, x_offset
+        if not left_bound < self.player.rect.centerx < right_bound:
+            self.scroll.x = self.player.velocity.x
+        else:
+            self.scroll.x = 0
 
 
 class Camera:
@@ -75,8 +69,8 @@ class Camera:
         return self.offset
 
     def follow(self):
-        self.offset.x += self.player.rect.x - self.offset.x + self.MIDDLE.x
-        self.offset.y += self.player.rect.y - self.offset.y + self.MIDDLE.y
+        self.offset.x += self.player.rect.x + self.MIDDLE.x
+        self.offset.y += self.player.rect.y + self.MIDDLE.y
 
     def border(self):
         pass
@@ -95,26 +89,35 @@ class Player(pygame.sprite.Sprite):
         self.rect = self.image.get_rect(midbottom=self.pos)
         self.collisions = {"right":False, "left":False, "top":False, "bottom":False}
         self.velocity = pygame.Vector2(0, 0)
-        self.speed = game_vars["speed"]
-        self.gravity = game_vars["gravity"]
         self.onground = False
+        self.total_scroll = pygame.Vector2(0, 0)
 
-    def update(self, dt, collisions_objects, camera):
+    @property
+    def abs_x(self):
+        return self.pos.x - self.total_scroll.x
+
+    @property
+    def abs_y(self):
+        return self.pos.y - self.total_scroll.y
+
+    def update(self, dt, collisions_objects, scroll):
+        self.total_scroll.xy -= scroll.xy
+        self.pos.xy -= scroll.xy
         self.horizontal_movement(dt)
         self.handle_collisions(self.get_collisions(collisions_objects), axis=0)
         self.vertical_movement(dt)
         self.handle_collisions(self.get_collisions(collisions_objects), axis=1)
         #self.pos.xy += -camera_offset
-
+        
     def render(self):
         #pygame.draw.rect(self.canvas, (255, 0, 0), self.rect)
         self.canvas.blit(self.image, self.pos.xy)
 
     def horizontal_movement(self, dt):
         if self.listener.key_pressed("a", hold=True):
-            self.velocity.x = -self.speed
+            self.velocity.x = -game_vars["speed"]
         if self.listener.key_pressed("d", hold=True):
-            self.velocity.x = self.speed
+            self.velocity.x = game_vars["speed"]
 
         if self.listener.key_up("a") or self.listener.key_up("d"):
             self.velocity.x = 0
@@ -126,7 +129,7 @@ class Player(pygame.sprite.Sprite):
         if self.listener.key_pressed("space") and self.onground: # set onground to False
             self.velocity.y = -game_vars["jump strength"]
         
-        self.velocity.y += self.gravity
+        self.velocity.y += game_vars["gravity"]
         self.pos.y += self.velocity.y
         self.rect.y = self.pos.y
 
@@ -141,7 +144,9 @@ class Player(pygame.sprite.Sprite):
                         self.rect.bottom = tile.rect.top
                         self.velocity.y = 0
                         self.onground = True
-                    elif self.velocity.y < 0: self.rect.top = tile.rect.bottom
+                    elif self.velocity.y < 0: 
+                        self.rect.top = tile.rect.bottom
+                        self.velocity.y = 0
             self.pos.xy = self.rect.topleft
 
     def get_collisions(self, group):
@@ -158,34 +163,19 @@ class Tile(pygame.sprite.Sprite):
         self.image = image
         self.image = pygame.transform.scale(self.image, self.size)
         self.rect = self.image.get_rect(topleft = self.pos)
+        self.total_scroll = pygame.Vector2(0, 0)
 
-    def update(self, camera_offset):
+    @property
+    def abs_x(self):
+        return self.pos.x - self.total_scroll.x
+
+    @property
+    def abs_y(self):
+        return self.pos.y - self.total_scroll.y
+
+    def update(self, scroll):
         #self.pos.xy += -camera_offset
+        self.total_scroll.xy -= scroll.xy
+        self.pos.xy -= scroll.xy
         self.rect.topleft = self.pos.xy
 
-        # if collision_list:
-            #     for tile in collision_list:
-            #         if axis:
-            #             if self.velocity.y > 0: self.rect.bottom = tile.rect.top
-            #             elif self.velocity.y < 0: self.rect.top = tile.rect.bottom
-            #             self.velocity.y = 0
-            #         else:
-            #             if self.velocity.x < 0 and self.rect.bottom != tile.rect.top: 
-            #                 self.rect.left = tile.rect.right
-            #             elif self.velocity.x > 0 and self.rect.bottom != tile.rect.top: 
-            #                 self.rect.right = tile.rect.left
-            #             self.velocity.x = 0
-            #     self.pos.xy = self.rect.topleft
-           
-           
-           
-            # for tile in player_collisions[cset]:
-            #     if cset == "x_tiles":
-            #         if self.velocity.x < 0: self.rect.left = tile.right
-            #         elif self.velocity.x > 0: self.rect.right = tile.left
-            #         self.velocity.x = 0
-            #     elif cset == "y_tiles":
-            #         if self.velocity.y > 0: self.rect.bottom = tile.top
-            #         elif self.velocity.y < 0: self.rect.top = tile.bottom
-            #         self.velocity.y = 0
-            # self.pos.xy = self.rect.topleft 
