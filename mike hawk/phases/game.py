@@ -18,12 +18,18 @@ class Game(Phase):
             command=self.exit_phase)
         self.tiles = pygame.sprite.Group()
         self.tile_size = 40
+
+        self.level = dev_level
+        self.map = self.crop_map(self.level["map"])
         self.place_tiles(self.tile_size)
 
-        self.player = Player(listener, canvas, (300,canvas.get_height() - self.tile_size))
+        spawn = (self.level["spawn"][0]*self.tile_size, self.canvas.get_height() - self.level["spawn"][1]*self.tile_size)
+        self.player = Player(listener, canvas, spawn)
         self.camera = Camera(self.player, canvas)
 
         self.scroll = pygame.Vector2(0, 0)
+
+        
 
     def update(self, dt):
         self.get_scroll(350, 350)
@@ -38,13 +44,18 @@ class Game(Phase):
         self.tiles.draw(self.canvas)
         self.player.render()
 
+    def crop_map(self, map):
+        for i, row in enumerate(map):
+            if any(row): break
+        lengths = []
+        for j, tile in enumerate(map[i:][::-1]):
+            if tile: lengths.append(j)
+        return [row[min(lengths):] for row in map[i:]]
+        
     def place_tiles(self, size):
-        level = dev_level["map"]
-        i = 0
-        for r, row in enumerate(level):
-            if not any(row): i += 1; continue
+        for r, row in enumerate(self.map):
             for c, tile in enumerate(row):
-                if tile: self.tiles.add(Tile((c,r-i), size, tile_frames[tile-1]))
+                if tile: self.tiles.add(Tile((c,r), size, tile_frames[tile-1]))
 
     def get_world_dimensions(self):
         return len(dev_level["map"][0])*self.tile_size, len(dev_level["map"])*self.tile_size

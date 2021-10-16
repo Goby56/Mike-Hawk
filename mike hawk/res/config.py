@@ -57,4 +57,4 @@ tile_frames = load_frames("dev_tiles")
 
 import json
 with open(os.path.join(_base_dir, "levels", "kadder_test.json")) as f:
-        dev_level = json.load(f)
+    dev_level = json.load(f)

@@ -76,11 +76,15 @@ class App:
         # open and load files
         tk.Tk().withdraw()
         level = fd.askopenfile()
+        if not level: quit()
         self.level, self.level_path = load_map(level.name)
 
         if not "tile set" in self.level.keys():
             self.level["tile set"] = "dev_tiles"
         self.frames = load_frames(self.level["tile set"])
+
+        if not "spawn" in self.level.keys():
+            self.level["spawn"] = (0, 0)
 
         self.new_level = False
         if not "map" in self.level.keys():
@@ -121,6 +125,11 @@ class App:
 
         for tile in Tile.tiles:
             tile.update(self.tile_width, (self.x_offset, self.y_offset))
+        
+        # draws spawnpoint
+        spawn_pos = real_pos((self.level["spawn"][0]*self.tile_width + self.x_offset, 
+            self.level["spawn"][1]*self.tile_width + self.y_offset), self.tile_width)
+        pygame.draw.rect(self.canvas, (255, 0, 0), (spawn_pos, (self.tile_width, self.tile_width)))
 
         self.panel.update(self.canvas, self.panel_rect.x)
         
@@ -159,27 +168,34 @@ class App:
                 elif event.button == 4:
                     self.scroll = self.scroll_speed
 
-        space = pygame.key.get_pressed()[pygame.K_SPACE]
-        if pygame.mouse.get_pressed()[0] and not space:
-            self.handle_tiles(pygame.mouse.get_pos())
-        if pygame.mouse.get_pressed()[2]:
-            self.handle_tiles(pygame.mouse.get_pos(), destroy=True)
-        if pygame.mouse.get_pressed()[0] and space:
+        mouse = pygame.mouse.get_pos()
+        button = pygame.mouse.get_pressed()
+        keys = pygame.key.get_pressed()
+        if button[0] and not keys[pygame.K_SPACE] and not keys[pygame.K_LALT]:
+            self.handle_tiles(mouse)
+        if button[2]:
+            self.handle_tiles(pygame.mouse.get_pos(), mode="destroy")
+        if button[0] and keys[pygame.K_SPACE]:
             rel = pygame.mouse.get_rel()
             self.x_offset += rel[0] if self.x_offset + rel[0] < 0 else 0
             self.y_offset -= rel[1] if self.y_offset - rel[1] < 0 else 0
+        if button[0] and keys[pygame.K_LALT]:
+            self.handle_tiles(mouse, mode="spawn")
 
-    def handle_tiles(self, mouse, destroy=False):
+    def handle_tiles(self, mouse, mode="place"):
         if not self.grid_rect.collidepoint(mouse[0], mouse[1]):
             return
         mouse = real_pos((mouse[0] - self.x_offset, mouse[1] + self.y_offset))
         x, y = (int(mouse[0] / self.tile_width)*self.tile_width, int(mouse[1] / self.tile_width)*self.tile_width)
         index = self.panel.get_selected().i
         gx, gy = x/self.tile_width, y/self.tile_width
-        if not Tile.tile_exist(gx, gy) and not destroy:
+        tile_exist = Tile.tile_exist(gx, gy)
+        if not tile_exist and mode == "place":
             Tile(self.canvas, (gx, gy), self.frames[index], index, self.level["map"])
-        elif Tile.tile_exist(gx, gy) and destroy:
+        elif tile_exist and mode == "destroy":
             Tile.get_tile(gx, gy).destroy()
+        elif not tile_exist and mode == "spawn":
+            self.level["spawn"] = (gx, gy)
         
     def save(self):
         self.level["map"].reverse()
