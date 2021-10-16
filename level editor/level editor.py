@@ -162,6 +162,10 @@ class App:
                 real_pos((self.grid_rect.width, i*self.tile_width + self.y_offset)))
 
     def events(self):
+        mouse = pygame.mouse.get_pos()
+        button = pygame.mouse.get_pressed()
+        keys = pygame.key.get_pressed()
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.save()
@@ -170,11 +174,8 @@ class App:
                 if event.button == 5:
                     self.scroll = -self.scroll_speed if self.tile_width > self.scroll_speed else 0
                 elif event.button == 4:
-                    self.scroll = self.scroll_speed
-
-        mouse = pygame.mouse.get_pos()
-        button = pygame.mouse.get_pressed()
-        keys = pygame.key.get_pressed()
+                    self.scroll = self.scroll_speed 
+        
         if button[0] and not keys[pygame.K_SPACE] and not keys[pygame.K_LALT]:
             self.handle_tiles(mouse)
         if button[2]:
