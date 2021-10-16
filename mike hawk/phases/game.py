@@ -17,10 +17,10 @@ class Game(Phase):
         self.backbutton = MenuButton(canvas, listener, (100, 150), "Pop Phase",
             command=self.exit_phase)
         self.tiles = pygame.sprite.Group()
-        self.tile_size = 100
+        self.tile_size = 40
         self.place_tiles(self.tile_size)
 
-        self.player = Player(listener, canvas, (300,300))
+        self.player = Player(listener, canvas, (300,canvas.get_height() - self.tile_size))
         self.camera = Camera(self.player, canvas)
 
         self.scroll = pygame.Vector2(0, 0)
@@ -40,9 +40,11 @@ class Game(Phase):
 
     def place_tiles(self, size):
         level = dev_level["map"]
+        i = 0
         for r, row in enumerate(level):
+            if not any(row): i += 1; continue
             for c, tile in enumerate(row):
-                if tile: self.tiles.add(Tile((c,r), size, tile_frames[tile-1]))
+                if tile: self.tiles.add(Tile((c,r-i), size, tile_frames[tile-1]))
 
     def get_world_dimensions(self):
         return len(dev_level["map"][0])*self.tile_size, len(dev_level["map"])*self.tile_size
@@ -137,7 +139,6 @@ class Player(pygame.sprite.Sprite):
         self.acceleration.x = game_vars["speed"]*direction
 
         self.velocity.x += dt*(self.acceleration.x + self.velocity.x*game_vars["friction"])
-        print(self.velocity.x)
         self.limit_velocity(game_vars["max_vel"])
         self.pos.x += self.velocity.x*dt + 0.5*(self.acceleration.x * dt**2)
 

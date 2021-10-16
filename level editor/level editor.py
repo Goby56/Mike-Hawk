@@ -169,8 +169,6 @@ class App:
             self.x_offset += rel[0] if self.x_offset + rel[0] < 0 else 0
             self.y_offset -= rel[1] if self.y_offset - rel[1] < 0 else 0
 
-            
-
     def handle_tiles(self, mouse, destroy=False):
         if not self.grid_rect.collidepoint(mouse[0], mouse[1]):
             return
@@ -183,7 +181,6 @@ class App:
         elif Tile.tile_exist(gx, gy) and destroy:
             Tile.get_tile(gx, gy).destroy()
         
-
     def save(self):
         self.level["map"].reverse()
         with open(self.level_path, "w") as file:
