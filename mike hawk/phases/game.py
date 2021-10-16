@@ -23,8 +23,9 @@ class Game(Phase):
         self.map = self.crop_map(self.level["map"])
         self.place_tiles(self.tile_size)
 
-        spawn = (self.level["spawn"][0]*self.tile_size, self.canvas.get_height() - self.level["spawn"][1]*self.tile_size - self.tile_size)
-        self.player = Player(listener, canvas, spawn)
+        player_dim = (int(self.tile_size*1.5), int(self.tile_size*3))
+        spawn = (self.level["spawn"][0]*self.tile_size - player_dim[0]//2, self.canvas.get_height() - self.level["spawn"][1]*self.tile_size + player_dim[1])
+        self.player = Player(listener, canvas, spawn, player_dim)
         self.camera = Camera(self.player, canvas)
 
         self.scroll = pygame.Vector2(0, 0)
@@ -107,13 +108,13 @@ class Camera: # dont remove, want to improve
 
 
 class Player(pygame.sprite.Sprite):
-    def __init__(self, listener, canvas, pos):
+    def __init__(self, listener, canvas, pos, size):
         super().__init__()
         self.listener = listener
         self.canvas = canvas
         self.pos = pygame.Vector2(pos)
         self.image = pygame.transform.scale(pygame.image.load(os.path.join(sprite_dir,
-             "mike.png")), (28*2, 72*2))
+             "mike.png")), (size))
         self.width, self.height = self.image.get_width(), self.image.get_height()
         self.rect = self.image.get_rect(midbottom=self.pos)
         self.collisions = {"right":False, "left":False, "top":False, "bottom":False}

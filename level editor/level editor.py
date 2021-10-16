@@ -111,6 +111,9 @@ class App:
         self.scroll_speed = 1
         self.x_offset, self.y_offset = 0, 0
 
+        #load other assets
+        self.spawn_surface = pygame.image.load(os.path.join(base_dir, "assets", "spawn_point.png"))
+
         # load tiles from save
         for y, row in enumerate(self.level["map"]):
             for x, tile in enumerate(row):
@@ -128,8 +131,9 @@ class App:
         
         # draws spawnpoint
         spawn_pos = real_pos((self.level["spawn"][0]*self.tile_width + self.x_offset, 
-            self.level["spawn"][1]*self.tile_width + self.y_offset), self.tile_width)
-        pygame.draw.rect(self.canvas, (255, 0, 0), (spawn_pos, (self.tile_width, self.tile_width)))
+            self.level["spawn"][1]*self.tile_width + self.y_offset - self.tile_width), self.tile_width)
+        surf = pygame.transform.scale(self.spawn_surface, (int(self.tile_width*1.5), int(self.tile_width*3)))
+        self.canvas.blit(surf, surf.get_rect(midbottom = spawn_pos).topleft)
 
         self.panel.update(self.canvas, self.panel_rect.x)
         
