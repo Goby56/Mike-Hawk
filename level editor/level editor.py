@@ -259,10 +259,10 @@ class Panel:
             pos = (column*(self.tile_width+self.padding) + self.padding, 
                     row*(self.tile_width+self.padding) + self.padding)
 
-            frame = self.frames[i]
-            frame.update(self.canvas, pos)
-            if frame.rect.collidepoint(mouse_pos) and clicked:
-                frame.select()
+            tile = self.frames[i]
+            tile.update(self.canvas, pos)
+            if tile.rect.collidepoint(mouse_pos) and clicked:
+                tile.select()
 
 
 if __name__ == "__main__":
