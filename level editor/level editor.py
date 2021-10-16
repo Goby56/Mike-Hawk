@@ -9,7 +9,7 @@ SCREENSIZE[1] //= 2
 MAX_X, MAX_Y = 512, 256
 
 # placera ut spawnpoints
-# när man sparar ta bort allt onödigt tomma tiles
+# space+mus dra i karta
 
 base_dir = os.path.abspath(os.path.dirname(__file__))
 map_dir = os.path.join(base_dir, "maps")
