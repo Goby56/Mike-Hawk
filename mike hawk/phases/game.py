@@ -23,7 +23,7 @@ class Game(Phase):
         self.map = self.crop_map(self.level["map"])
         self.place_tiles(self.tile_size)
 
-        spawn = (self.level["spawn"][0]*self.tile_size, self.canvas.get_height() - self.level["spawn"][1]*self.tile_size)
+        spawn = (self.level["spawn"][0]*self.tile_size, self.canvas.get_height() - self.level["spawn"][1]*self.tile_size - self.tile_size)
         self.player = Player(listener, canvas, spawn)
         self.camera = Camera(self.player, canvas)
 
@@ -58,7 +58,7 @@ class Game(Phase):
                 if tile: self.tiles.add(Tile((c,r), size, tile_frames[tile-1]))
 
     def get_world_dimensions(self):
-        return len(dev_level["map"][0])*self.tile_size, len(dev_level["map"])*self.tile_size
+        return (len(self.map[0]) * self.tile_size, len(self.map) * self.tile_size)
 
     def limit_player(self):
         if self.player.pos.x > self.canvas.get_width() - self.player.width:
