@@ -12,7 +12,7 @@ SCREENSIZE[1] //= 2
 
 MAX_X, MAX_Y = 512, 256
 
-# placera ut spawnpoints
+# func för bara get_mouse
 
 base_dir = os.path.abspath(os.path.dirname(__file__))
 map_dir = os.path.join(base_dir, "maps")

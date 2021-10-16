@@ -78,8 +78,8 @@ class Game(Phase):
 
 
 class Camera: # dont remove, want to improve
-    def __init__(self, game, canvas):
-        self.player = game.player
+    def __init__(self, player, canvas):
+        self.player = player
         self.offset = pygame.Vector2(0,0)
         self.CANVAS_W, self.CANVAS_H = canvas.get_size()
 
