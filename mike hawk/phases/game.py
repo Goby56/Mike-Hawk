@@ -24,19 +24,15 @@ class Game(Phase):
         self.place_tiles(self.tile_size)
 
         spawn = (self.level["spawn"][0]*self.tile_size, self.canvas.get_height() - self.level["spawn"][1]*self.tile_size)
-        self.player = Player(listener, canvas, spawn)
-        self.camera = Camera(self.player, canvas)
-
-        self.scroll = pygame.Vector2(0, 0)
-
         
+        self.player = Player(listener, canvas, spawn)
+        self.camera = Camera(self, canvas)
+        self.scroll = pygame.Vector2(0,0)
 
     def update(self, dt):
-        self.get_scroll(350, 350)
-
+        self.scroll = self.camera.get_offset()
         self.player.update(dt, self.tiles, self.scroll)
-        self.limit_player()
-
+        #self.scroll = self.camera.get_offset()
         self.tiles.update(self.scroll)
         self.backbutton.update()
 
@@ -82,13 +78,13 @@ class Game(Phase):
 
 
 class Camera: # dont remove, want to improve
-    def __init__(self, player, canvas):
-        self.player = player
+    def __init__(self, game, canvas):
+        self.player = game.player
         self.offset = pygame.Vector2(0,0)
         self.CANVAS_W, self.CANVAS_H = canvas.get_size()
 
         # Offset for follow method
-        self.MIDDLE = pygame.Vector2(-self.CANVAS_W/2, -self.CANVAS_H/2 + player.rect.y/2 - 100)
+        self.MIDDLE = pygame.Vector2(-self.CANVAS_W/2, -self.CANVAS_H/2)
         self.method = "follow"
 
     def get_offset(self):
@@ -96,8 +92,8 @@ class Camera: # dont remove, want to improve
         return self.offset
 
     def follow(self):
-        self.offset.x += self.player.rect.x + self.MIDDLE.x
-        self.offset.y += self.player.rect.y + self.MIDDLE.y
+        self.offset.x += (self.player.pos.x - self.offset.x + self.MIDDLE.x)
+        self.offset.y += (self.player.pos.y - self.offset.y + self.MIDDLE.y - 100)
 
     def border(self):
         pass
@@ -113,34 +109,39 @@ class Player(pygame.sprite.Sprite):
         self.canvas = canvas
         self.pos = pygame.Vector2(pos)
         self.image = pygame.transform.scale(pygame.image.load(os.path.join(sprite_dir,
-             "mike.png")), (28*2, 72*2))
+             "mike.png")), (30*2, 30*2))
         self.width, self.height = self.image.get_width(), self.image.get_height()
         self.rect = self.image.get_rect(midbottom=self.pos)
         self.collisions = {"right":False, "left":False, "top":False, "bottom":False}
         self.acceleration = pygame.Vector2(0, game_vars["gravity"])
         self.velocity = pygame.Vector2(0, 0)
         self.onground = False
-        self.total_scroll = pygame.Vector2(0, 0)
+        self.scroll_offset = pygame.Vector2(0, 0)
 
     @property
     def abs_x(self):
-        return self.pos.x - self.total_scroll.x
+        return self.pos.x + self.scroll_offset.x
 
     @property
     def abs_y(self):
-        return self.pos.y - self.total_scroll.y
+        return self.pos.y - self.scroll_offset.y
 
     def update(self, dt, collisions_objects, scroll):
-        self.total_scroll.xy -= scroll.xy
-        self.pos.xy -= scroll.xy
-
         self.horizontal_movement(dt)
         self.handle_collisions(self.get_collisions(collisions_objects), axis=0)
         self.vertical_movement(dt)
         self.handle_collisions(self.get_collisions(collisions_objects), axis=1)
-        
+
+        self.scroll_offset += scroll
+        self.pos.x += -int(scroll.x)
+        self.pos.y += -int(scroll.y)
+
+        self.rect.midbottom = self.pos.xy
+
     def render(self):
-        self.canvas.blit(self.image, self.pos.xy)
+        pygame.draw.rect(self.canvas, (255,0,0), self.rect)
+        self.canvas.blit(self.image, self.rect.topleft)
+        pygame.draw.line(self.canvas, (0,0,255), self.pos.xy, self.pos.xy + (0,-100))
 
     def horizontal_movement(self, dt):
         dt *= 60
@@ -153,7 +154,7 @@ class Player(pygame.sprite.Sprite):
         self.limit_velocity(game_vars["max_vel"])
         self.pos.x += self.velocity.x*dt + 0.5*(self.acceleration.x * dt**2)
 
-        self.rect.x = self.pos.x
+        self.rect.centerx = self.pos.x
 
     def vertical_movement(self, dt):
         dt *= 60
@@ -164,7 +165,7 @@ class Player(pygame.sprite.Sprite):
         self.velocity.y += self.acceleration.y*dt
         self.pos.y += self.velocity.y*dt + 0.5*(self.acceleration.y * dt**2)
         
-        self.rect.y = self.pos.y
+        self.rect.bottom = self.pos.y
 
     def limit_velocity(self, max_velocity):
         if abs(self.velocity.x) > max_velocity:
@@ -189,11 +190,17 @@ class Player(pygame.sprite.Sprite):
                     elif self.velocity.y < 0: 
                         self.rect.top = tile.rect.bottom
                         self.velocity.y = 0
-            self.pos.xy = self.rect.topleft
+            self.pos.xy = self.rect.midbottom
 
     def get_collisions(self, group):
-        collisions = pygame.sprite.spritecollide(self, group, False)
-        return collisions
+        # collisions = pygame.sprite.spritecollide(self, group, False)
+        # return collisions
+        collision_list = []
+        for sprite in group:
+            if self.rect.colliderect(sprite.rect):
+                collision_list.append(sprite)
+                pygame.draw.rect(self.canvas, (255,0,0), sprite.rect)
+        return collision_list
 
 
 class Tile(pygame.sprite.Sprite):
@@ -204,18 +211,20 @@ class Tile(pygame.sprite.Sprite):
         self.image = image
         self.image = pygame.transform.scale(self.image, self.size)
         self.rect = self.image.get_rect(topleft = self.pos)
-        self.total_scroll = pygame.Vector2(0, 0)
+        self.scroll_offset = pygame.Vector2(0, 0)
 
     @property
     def abs_x(self):
-        return self.pos.x - self.total_scroll.x
+        return self.pos.x + self.scroll_offset.x
 
     @property
     def abs_y(self):
-        return self.pos.y - self.total_scroll.y
+        return self.pos.y - self.scroll_offset.y
 
     def update(self, scroll):
-        self.total_scroll.xy -= scroll.xy
-        self.pos.xy -= scroll.xy
+        self.scroll_offset += scroll
+        self.pos.x += -int(scroll.x)
+        self.pos.y += -int(scroll.y)
+
         self.rect.topleft = self.pos.xy
 
