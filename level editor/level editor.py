@@ -1,13 +1,14 @@
-from sys import platform
 import pygame, json, os, ctypes
+import numpy as np
 from spritesheet import Spritesheet
 
 SCREENSIZE = [ctypes.windll.user32.GetSystemMetrics(0), ctypes.windll.user32.GetSystemMetrics(1)]
 SCREENSIZE[0] //= 2
 SCREENSIZE[1] //= 2
 
-# utgå nere från vänstra hörn
-# fixa så man kan ta bort tiles
+MAX_X, MAX_Y = 512, 256
+
+# placera ut spawnpoints
 # när man sparar ta bort allt onödigt tomma tiles
 
 base_dir = os.path.abspath(os.path.dirname(__file__))
@@ -31,26 +32,53 @@ def load_frames(filename):
     frames = spritesheet.get_frames(data) # Get sequence of frames
     return frames
 
+def real_pos(pos, obj_height = 0):
+    return (pos[0], SCREENSIZE[1] - pos[1] - obj_height)
+
 
 class Tile:
     tiles = []
-    def __init__(self, canvas, pos, frame):
+    def __init__(self, canvas, pos, frame, index, map):
         self.frame = frame
+        self.map = map
         self.x, self.y = pos
         self.canvas = canvas
         Tile.tiles.append(self)
+        self.map[int(self.y)][int(self.x)] = index + 1
 
     def update(self, width):
         surf = pygame.transform.scale(self.frame, (width, width))
-        self.canvas.blit(surf, (self.x*width, self.y*width))
+        self.canvas.blit(surf, real_pos((self.x*width, self.y*width), width))
+
+    def destroy(self):
+        self.map[int(self.y)][int(self.x)] = 0
+        Tile.tiles.remove(self)
+
+    @classmethod
+    def tile_exist(cls, x, y):
+        for tile in cls.tiles:
+            if (x, y) == (tile.x, tile.y):
+                return True
+        return False
+
+    @classmethod
+    def get_tile(cls, x, y):
+        for tile in cls.tiles:
+            if (x, y) == (tile.x, tile.y):
+                return tile
 
 
 class App:
     def __init__(self):
         
         # temp, make choise in app
-        self.map, self.map_path = load_map("dev_level")
+        self.level, self.level_path = load_map("dev_level")
         self.frames = load_frames("dev_tiles")
+
+        if not "map" in self.level.keys():
+            self.level["map"] = np.zeros((MAX_X, MAX_Y), dtype=int).tolist()
+        else:
+            self.level["map"].reverse()
 
         # pygame stuff
         self.display = pygame.display.set_mode(SCREENSIZE)
@@ -69,10 +97,11 @@ class App:
         self.scroll = 0
         self.scroll_speed = 1
 
-
-    @property
-    def gridsize(self):
-        return int(self.grid_rect.width / self.tile_width)
+        # load tiles from save
+        for y, row in enumerate(self.level["map"]):
+            for x, tile in enumerate(row):
+                if tile:
+                    Tile(self.canvas, (x, y), self.frames[tile-1], tile-1, self.level["map"])
 
     def main(self):
         self.render()
@@ -82,6 +111,8 @@ class App:
 
         for tile in Tile.tiles:
             tile.update(self.tile_width)
+
+        self.panel.update(self.canvas, self.panel_rect.x)
         
         self.display.blit(self.canvas, (0, 0))
         pygame.display.update()
@@ -90,7 +121,6 @@ class App:
     def update(self):
         self.tile_width += self.scroll
         self.scroll = 0
-        self.panel.update(self.canvas, self.panel_rect.x)
 
     def render(self):
         self.canvas.fill((0, 0, 0))
@@ -98,9 +128,9 @@ class App:
         pygame.draw.rect(self.canvas, (20, 20, 20), self.panel_rect)
 
     def draw_lines(self):
-        for i in range(self.gridsize):
-            pygame.draw.line(self.canvas, (255, 255, 255), (i*self.tile_width, 0), (i*self.tile_width, self.grid_rect.height))
-            pygame.draw.line(self.canvas, (255, 255, 255), (0, i*self.tile_width), (self.grid_rect.width, i*self.tile_width))
+        for i in range(int(self.grid_rect.width / self.tile_width)):
+            pygame.draw.line(self.canvas, (255, 255, 255), real_pos((i*self.tile_width, 0)), real_pos((i*self.tile_width, self.grid_rect.height)))
+            pygame.draw.line(self.canvas, (255, 255, 255), real_pos((0, i*self.tile_width)), real_pos((self.grid_rect.width, i*self.tile_width)))
 
     def events(self):
         for event in pygame.event.get():
@@ -113,19 +143,30 @@ class App:
                 elif event.button == 4:
                     self.scroll = self.scroll_speed
                 elif event.button == 1:
-                    self.place_tile(pygame.mouse.get_pos())
+                    pass
+        if pygame.mouse.get_pressed()[0]:
+            self.handle_tiles(pygame.mouse.get_pos())
+        if pygame.mouse.get_pressed()[2]:
+            self.handle_tiles(pygame.mouse.get_pos(), destroy=True)
+            
 
-    def place_tile(self, mouse):
+    def handle_tiles(self, mouse, destroy=False):
         if not self.grid_rect.collidepoint(mouse[0], mouse[1]):
             return
-        x, y = int(mouse[0] / self.tile_width)*self.tile_width, int(mouse[1] / self.tile_width)*self.tile_width
+        mouse = real_pos(mouse)
+        x, y = (int(mouse[0] / self.tile_width)*self.tile_width, int(mouse[1] / self.tile_width)*self.tile_width)
         index = self.panel.get_selected().i
-        pygame.draw.rect(self.canvas, (255, 0, 0), (x, y, self.tile_width, self.tile_width))
-        Tile(self.canvas, (x/self.tile_width, y/self.tile_width), self.frames[index])
+        gx, gy = x/self.tile_width, y/self.tile_width
+        if not Tile.tile_exist(gx, gy) and not destroy:
+            Tile(self.canvas, (gx, gy), self.frames[index], index, self.level["map"])
+        elif Tile.tile_exist(gx, gy):
+            Tile.get_tile(gx, gy).destroy()
+        
 
     def save(self):
-        with open(self.map_path, "w") as file:
-            json.dump(self.map, file)
+        self.level["map"].reverse()
+        with open(self.level_path, "w") as file:
+            json.dump(self.level, file)
 
 
 class PanelTile(pygame.Surface):
