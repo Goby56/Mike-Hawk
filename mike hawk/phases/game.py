@@ -26,7 +26,7 @@ class Game(Phase):
         player_dim = (int(self.tile_size*1.5), int(self.tile_size*3))
         spawn = (self.level["spawn"][0]*self.tile_size - player_dim[0]//2, self.canvas.get_height() - self.level["spawn"][1]*self.tile_size + player_dim[1])
         self.player = Player(listener, canvas, spawn, player_dim)
-        self.camera = Camera(self.player, canvas)
+        self.camera = Camera(self, canvas)
         self.scroll = pygame.Vector2(0, 0)
 
     def update(self, dt):
