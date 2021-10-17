@@ -82,7 +82,6 @@ class App:
         if not "tile set" in self.level.keys():
             self.level["tile set"] = "dev_tiles"
         self.frames = load_frames(self.level["tile set"])
-        self.bg_frames = load_frames("dev_tiles_bg")
 
         if not "spawn" in self.level.keys():
             self.level["spawn"] = (0, 0)
@@ -94,11 +93,6 @@ class App:
         else:
             self.level["map"].reverse()
 
-        if not "background map" in self.level.keys():
-            self.level["background map"] = np.zeros((MAX_X, MAX_Y), dtype=int).tolist()
-        else:
-            self.level["background map"].reverse()
-
         # pygame stuff
         self.display = pygame.display.set_mode(SCREENSIZE)
         self.canvas = pygame.Surface(SCREENSIZE)
@@ -108,11 +102,7 @@ class App:
         # widgets
         panel_width = 200
         self.panel_rect = pygame.Rect((self.rect.width - panel_width, 0), (panel_width, self.rect.height))
-        self.main_panel = Panel(panel_width, self.rect.height, self.frames, self.level["map"])
-        self.bg_panel = Panel(panel_width, self.rect.height, self.bg_frames, self.level["background map"])
-
-        self.panels = [self.main_panel, self.bg_panel]
-        self.page = 0
+        self.panel = Panel(panel_width, self.rect.height, self.frames)
 
         # grids
         self.tile_width = 40
@@ -125,14 +115,10 @@ class App:
         self.spawn_surface = pygame.image.load(os.path.join(base_dir, "assets", "spawn_point.png"))
 
         # load tiles from save
-        self.load_tiles(self.level["map"], self.frames)
-        self.load_tiles(self.level["background map"], self.bg_frames)
-
-    def load_tiles(self, map, frames):
-        for y, row in enumerate(map):
+        for y, row in enumerate(self.level["map"]):
             for x, tile in enumerate(row):
                 if tile:
-                    Tile(self.canvas, (x, y), frames[tile-1], tile-1, map)
+                    Tile(self.canvas, (x, y), self.frames[tile-1], tile-1, self.level["map"])
 
     def main(self):
         self.render()
@@ -149,7 +135,7 @@ class App:
         surf = pygame.transform.scale(self.spawn_surface, (int(self.tile_width*1.5), int(self.tile_width*3)))
         self.canvas.blit(surf, surf.get_rect(midbottom = spawn_pos).topleft)
 
-        self.current_panel().update(self.canvas, self.panel_rect.x)
+        self.panel.update(self.canvas, self.panel_rect.x)
         
         pygame.mouse.get_rel()
         self.display.blit(self.canvas, (0, 0))
@@ -182,73 +168,65 @@ class App:
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                self.save(); quit()
+                self.save()
+                quit()
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 5:
                     self.scroll = -self.scroll_speed if self.tile_width > self.scroll_speed else 0
                 elif event.button == 4:
-                    self.scroll = self.scroll_speed
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_a:
-                    self.page -= 1
-                elif event.key == pygame.K_d:
-                    self.page += 1
+                    self.scroll = self.scroll_speed 
         
-        other_keys = [keys[pygame.K_SPACE], keys[pygame.K_LALT]]
-        if button[0] and not any(other_keys):
-            self.manage_tiles(mouse, mode="place")
+        if button[0] and not keys[pygame.K_SPACE] and not keys[pygame.K_LALT]:
+            self.handle_tiles(mouse)
         if button[2]:
-            self.manage_tiles(mouse, mode="destroy")
-        if button[0] and keys[pygame.K_LALT]:
-            self.manage_tiles(mouse, mode="spawn")
-
+            self.handle_tiles(pygame.mouse.get_pos(), mode="destroy")
         if button[0] and keys[pygame.K_SPACE]:
             rel = pygame.mouse.get_rel()
             self.x_offset += rel[0] if self.x_offset + rel[0] < 0 else 0
             self.y_offset -= rel[1] if self.y_offset - rel[1] < 0 else 0
+        if button[0] and keys[pygame.K_LALT]:
+            self.handle_tiles(mouse, mode="spawn")
 
-    def current_panel(self):
-        return self.panels[self.page]
-
-    def convert_mouse(self, mouse):
-        mouse = real_pos((mouse[0] - self.x_offset, mouse[1] + self.y_offset))
-        x, y = (int(mouse[0] / self.tile_width)*self.tile_width, int(mouse[1] / self.tile_width)*self.tile_width)
-        return x/self.tile_width, y/self.tile_width
-
-    def manage_tiles(self, mouse, mode="place"):
+    def handle_tiles(self, mouse, mode="place"):
         if not self.grid_rect.collidepoint(mouse[0], mouse[1]):
             return
-        panel = self.current_panel()
-        x, y = self.convert_mouse(mouse)
-        index = panel.get_selected().index
-        tile_exist = Tile.tile_exist(x, y)
-
-        if tile_exist:
-            if mode == "destroy":
-                Tile.get_tile(x, y).destroy()
-        else:
-            if mode == "place":
-                Tile(self.canvas, (x, y), panel.frames[index], index, panel.map)
-            elif mode == "spawn":
-                self.level["spawn"] = (x, y)
-
+        mouse = real_pos((mouse[0] - self.x_offset, mouse[1] + self.y_offset))
+        x, y = (int(mouse[0] / self.tile_width)*self.tile_width, int(mouse[1] / self.tile_width)*self.tile_width)
+        index = self.panel.get_selected().i
+        gx, gy = x/self.tile_width, y/self.tile_width
+        tile_exist = Tile.tile_exist(gx, gy)
+        if not tile_exist and mode == "place":
+            Tile(self.canvas, (gx, gy), self.frames[index], index, self.level["map"])
+        elif tile_exist and mode == "destroy":
+            Tile.get_tile(gx, gy).destroy()
+        elif not tile_exist and mode == "spawn":
+            self.level["spawn"] = (gx, gy)
+        
     def save(self):
         self.level["map"].reverse()
-        self.level["background map"].reverse()
         with open(self.level_path, "w") as file:
             json.dump(self.level, file)
 
 
 class PanelTile(pygame.Surface):
-    def __init__(self, dim, frame, index):
+    tiles = []
+
+    def __init__(self, dim, frame, i):
         super().__init__((dim[0] + 2, dim[1] + 2))
         self.frame = frame
-        self.index = index
+        self.i = i
         self.rect = self.get_rect()
         self.selected = False
+        PanelTile.tiles.append(self)
 
-    def select(self, tiles):
-        for tile in tiles:
+    @classmethod
+    def get_selected(cls):
+        for tile in cls.tiles:
+            if tile.selected:
+                return tile
+
+    def select(self):
+        for tile in PanelTile.tiles:
             tile.selected = False
         self.selected = True
 
@@ -269,29 +247,25 @@ def panel_loop(num_frames):
             if num_frames > i:
                yield i, row, column
             i += 1
-
+                 
 
 class Panel:
-    def __init__(self, width, height, tiles, map):
+    def __init__(self, width, height, frames):
         self.width= width
-        self.map = map
-        self.frames = tiles
 
         self.padding = 10
         self.tile_width = int((self.width-4*self.padding)/3)
 
-        self.tiles = []
-        for i, tile in enumerate(tiles):
-            tile = pygame.transform.scale(tile, (self.tile_width, self.tile_width))
-            self.tiles.append(PanelTile(tile.get_size(), tile, i))
-        self.tiles[0].selected = True
+        self.frames = []
+        for i, frame in enumerate(frames):
+            frame = pygame.transform.scale(frame, (self.tile_width, self.tile_width))
+            self.frames.append(PanelTile(frame.get_size(), frame, i))
+        self.frames[0].selected = True
 
         self.canvas = pygame.Surface((width, height))
 
     def get_selected(self):
-        for frame in self.tiles: 
-            if frame.selected:
-                return frame
+        return PanelTile.get_selected()
 
     def update(self, canvas, x):
         self.update_tiles(x)
@@ -302,14 +276,14 @@ class Panel:
         mouse_pos = (mouse_pos[0] - x, mouse_pos[1])
         clicked = pygame.mouse.get_pressed()[0]
 
-        for i, row, column in panel_loop(len(self.tiles)):
+        for i, row, column in panel_loop(len(self.frames)):
             pos = (column*(self.tile_width+self.padding) + self.padding, 
                     row*(self.tile_width+self.padding) + self.padding)
 
-            tile = self.tiles[i]
+            tile = self.frames[i]
             tile.update(self.canvas, pos)
             if tile.rect.collidepoint(mouse_pos) and clicked:
-                tile.select(self.tiles)
+                tile.select()
 
 
 if __name__ == "__main__":
