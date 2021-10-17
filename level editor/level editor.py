@@ -189,9 +189,9 @@ class App:
                 elif event.button == 4:
                     self.scroll = self.scroll_speed
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_a:
+                if event.key == pygame.K_a and self.page > 0:
                     self.page -= 1
-                elif event.key == pygame.K_d:
+                elif event.key == pygame.K_d and self.page+1 < len(self.panels):
                     self.page += 1
         
         other_keys = [keys[pygame.K_SPACE], keys[pygame.K_LALT]]

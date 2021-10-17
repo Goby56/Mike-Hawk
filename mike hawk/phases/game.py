@@ -6,7 +6,7 @@ from res.widgets import MenuButton
 
 # temp import
 import json, os
-from res.config import tile_frames, sprite_dir, dev_level, game_vars
+from res.config import tile_frames, tile_frames_bg, sprite_dir, dev_level, game_vars
 
 
 class Game(Phase):
@@ -17,14 +17,18 @@ class Game(Phase):
         self.backbutton = MenuButton(canvas, listener, (100, 150), "Pop Phase",
             command=self.exit_phase)
         self.tiles = pygame.sprite.Group()
+        self.bg_tiles = pygame.sprite.Group()
         self.tile_size = 40
 
         self.level = dev_level
         self.map = self.crop_map(self.level["map"])
-        self.place_tiles(self.tile_size)
+        self.bg_map = self.crop_map(self.level["background map"])
+        self.place_tiles(self.tiles, self.map, tile_frames, self.tile_size)
+        self.place_tiles(self.bg_tiles, self.bg_map, tile_frames_bg, self.tile_size)
 
         player_dim = (int(self.tile_size*1.5), int(self.tile_size*3))
-        spawn = (self.level["spawn"][0]*self.tile_size - player_dim[0]//2, self.canvas.get_height() - self.level["spawn"][1]*self.tile_size + player_dim[1])
+        spawn = (self.level["spawn"][0]*self.tile_size - player_dim[0]//2, self.level["spawn"][1]*self.tile_size + player_dim[1])
+        print(spawn, self.level["spawn"])
         self.player = Player(listener, canvas, spawn, player_dim)
         self.camera = Camera(self, canvas)
         self.scroll = pygame.Vector2(0, 0)
@@ -33,12 +37,14 @@ class Game(Phase):
         self.scroll = self.camera.get_offset()
         self.player.update(dt, self.tiles, self.scroll)
         self.limit_player()
+        self.bg_tiles.update(self.scroll)
         self.tiles.update(self.scroll)
-        self.backbutton.update()
 
     def render(self):
         self.tiles.draw(self.canvas)
+        self.bg_tiles.draw(self.canvas)
         self.player.render()
+        self.backbutton.update()
 
     def crop_map(self, map):
         for i, row in enumerate(map):
@@ -48,10 +54,10 @@ class Game(Phase):
             if tile: lengths.append(j)
         return [row[min(lengths):] for row in map[i:]]
         
-    def place_tiles(self, size):
-        for r, row in enumerate(self.map):
+    def place_tiles(self, group, map, frames, size):
+        for r, row in enumerate(map):
             for c, tile in enumerate(row):
-                if tile: self.tiles.add(Tile((c,r), size, tile_frames[tile-1]))
+                if tile: group.add(Tile((c,r), size, frames[tile-1]))
 
     def get_world_dimensions(self):
         return (len(self.map[0]) * self.tile_size, len(self.map) * self.tile_size)

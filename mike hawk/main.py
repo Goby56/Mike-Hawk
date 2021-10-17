@@ -4,7 +4,7 @@ from res.config import *
 from phases.phase import Phase
 from phases.menu import MainMenu
 
-pygame.font.init()      
+pygame.font.init()
 
 class Main:
     def __init__(self):
