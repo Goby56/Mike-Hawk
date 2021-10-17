@@ -17,7 +17,7 @@ colors = {
 
 game_vars = {
     "gravity": 0.5,
-    "jump strength": 12,
+    "jump strength": 13,
     "speed": 1.5,
     "friction": -0.2,
     "max_vel": 6
@@ -25,7 +25,7 @@ game_vars = {
 
 import ctypes
 SCREENSIZE = ctypes.windll.user32.GetSystemMetrics(0), ctypes.windll.user32.GetSystemMetrics(1)
-SCREENSIZE = (800, 700)
+SCREENSIZE = (1400, 800)
 
 SCREEN_WIDTH, SCREEN_HEIGHT = SCREENSIZE
 

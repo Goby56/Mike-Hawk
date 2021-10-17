@@ -32,7 +32,7 @@ class Game(Phase):
     def update(self, dt):
         self.scroll = self.camera.get_offset()
         self.player.update(dt, self.tiles, self.scroll)
-        #self.scroll = self.camera.get_offset()
+        self.limit_player()
         self.tiles.update(self.scroll)
         self.backbutton.update()
 
@@ -57,46 +57,62 @@ class Game(Phase):
         return (len(self.map[0]) * self.tile_size, len(self.map) * self.tile_size)
 
     def limit_player(self):
-        if self.player.pos.x > self.canvas.get_width() - self.player.width:
-            self.player.pos.x = self.canvas.get_width() - self.player.width
-        if self.player.pos.x < 0:
-            self.player.pos.x = 0
+        if self.player.rect.right > self.canvas.get_width():
+            self.player.rect.right = self.canvas.get_width()
+        if self.player.rect.left < 0:
+            self.player.rect.left = 0
 
-    def get_scroll(self, x_offset, y_offset):
-        if self.player.abs_x < x_offset - self.player.width/2:
-            self.scroll.x = 0
-            return
-        elif self.player.abs_x > self.get_world_dimensions()[0] - x_offset - self.player.width/2:
-            self.scroll.x = 0
-            return
-            
-        right_bound, left_bound = self.canvas.get_width() - x_offset, x_offset
-        if not left_bound < self.player.rect.centerx < right_bound:
-            self.scroll.x = self.player.velocity.x
-        else:
-            self.scroll.x = 0
+        self.player.pos.xy = self.player.rect.midbottom
 
 
-class Camera: # dont remove, want to improve
-    def __init__(self, player, canvas):
-        self.player = player
-        self.offset = pygame.Vector2(0,0)
+class Camera:
+    def __init__(self, game, canvas):
+        self.game = game
+        self.player = game.player
+       
         self.CANVAS_W, self.CANVAS_H = canvas.get_size()
+        self.MIDDLE = pygame.Vector2(self.CANVAS_W/2, self.CANVAS_H/2)
 
+        self.offset = pygame.Vector2(0,0)
+        self.total_offset = pygame.Vector2(0,0)
         # Offset for follow method
-        self.MIDDLE = pygame.Vector2(-self.CANVAS_W/2, -self.CANVAS_H/2)
         self.method = "follow"
+    
+    @property
+    def abs_x(self):
+        return self.total_offset.x
+
+    @property
+    def abs_y(self):
+        return self.total_offset.y
 
     def get_offset(self):
         exec(f"self.{self.method}()")
         return self.offset
 
     def follow(self):
-        self.offset.x += (self.player.pos.x - self.offset.x + self.MIDDLE.x)
-        self.offset.y += (self.player.pos.y - self.offset.y + self.MIDDLE.y - 100)
+        self.offset.x += (self.player.pos.x - self.offset.x - self.MIDDLE.x)
+        self.offset.y += (self.player.pos.y - self.offset.y - self.MIDDLE.y - self.player.height)
+        self.total_offset += self.offset
+        self.border()
 
     def border(self):
-        pass
+        if self.abs_x < 0:
+            self.offset.x = 0
+            self.total_offset.x = 0
+
+        if self.abs_y < 0:
+            self.offset.y = 0
+            self.total_offset.y = 0
+
+        world_dim = self.game.get_world_dimensions()
+        if self.abs_x > 2680 - 2*self.MIDDLE.x:
+            self.offset.x = 0
+            self.total_offset.x = 2680 - 2*self.MIDDLE.x
+
+        if self.abs_y > world_dim[1] - 2*self.MIDDLE.y:
+            self.offset.y = 0
+            self.total_offset.y = world_dim[1] - 2*self.MIDDLE.y
 
     def auto(self):
         pass
@@ -131,10 +147,10 @@ class Player(pygame.sprite.Sprite):
         self.handle_collisions(self.get_collisions(collisions_objects), axis=0)
         self.vertical_movement(dt)
         self.handle_collisions(self.get_collisions(collisions_objects), axis=1)
-
+        
         self.scroll_offset += scroll
-        self.pos.x += -int(scroll.x)
-        self.pos.y += -int(scroll.y)
+        self.pos.x += -(scroll.x)
+        self.pos.y += -(scroll.y)
 
         self.rect.midbottom = self.pos.xy
 
@@ -152,7 +168,7 @@ class Player(pygame.sprite.Sprite):
 
         self.velocity.x += dt*(self.acceleration.x + self.velocity.x*game_vars["friction"])
         self.limit_velocity(game_vars["max_vel"])
-        self.pos.x += self.velocity.x*dt + 0.5*(self.acceleration.x * dt**2)
+        self.pos.x += int(self.velocity.x*dt + 0.5*(self.acceleration.x * dt**2))
 
         self.rect.centerx = self.pos.x
 
@@ -163,7 +179,7 @@ class Player(pygame.sprite.Sprite):
         self.onground = False
 
         self.velocity.y += self.acceleration.y*dt
-        self.pos.y += self.velocity.y*dt + 0.5*(self.acceleration.y * dt**2)
+        self.pos.y += int(self.velocity.y*dt + 0.5*(self.acceleration.y * dt**2))
         
         self.rect.bottom = self.pos.y
 
@@ -193,14 +209,8 @@ class Player(pygame.sprite.Sprite):
             self.pos.xy = self.rect.midbottom
 
     def get_collisions(self, group):
-        # collisions = pygame.sprite.spritecollide(self, group, False)
-        # return collisions
-        collision_list = []
-        for sprite in group:
-            if self.rect.colliderect(sprite.rect):
-                collision_list.append(sprite)
-                pygame.draw.rect(self.canvas, (255,0,0), sprite.rect)
-        return collision_list
+        collisions = pygame.sprite.spritecollide(self, group, False)
+        return collisions
 
 
 class Tile(pygame.sprite.Sprite):
@@ -223,8 +233,22 @@ class Tile(pygame.sprite.Sprite):
 
     def update(self, scroll):
         self.scroll_offset += scroll
-        self.pos.x += -int(scroll.x)
-        self.pos.y += -int(scroll.y)
+        self.pos.x += -(scroll.x)
+        self.pos.y += -(scroll.y)
 
         self.rect.topleft = self.pos.xy
 
+# gamla scroll
+# def get_scroll(self, x_offset, y_offset):
+    #     if self.player.abs_x < x_offset - self.player.width/2:
+    #         self.scroll.x = 0
+    #         return
+    #     elif self.player.abs_x > self.get_world_dimensions()[0] - x_offset - self.player.width/2:
+    #         self.scroll.x = 0
+    #         return
+            
+    #     right_bound, left_bound = self.canvas.get_width() - x_offset, x_offset
+    #     if not left_bound < self.player.rect.centerx < right_bound:
+    #         self.scroll.x = self.player.velocity.x
+    #     else:
+    #         self.scroll.x = 0
