@@ -106,7 +106,7 @@ class App:
         self.clock = pygame.time.Clock()
 
         # widgets
-        panel_width = 200
+        panel_width = SCREENSIZE[0] // 4
         self.panel_rect = pygame.Rect((self.rect.width - panel_width, 0), (panel_width, self.rect.height))
         self.main_panel = Panel(panel_width, self.rect.height, self.frames, self.level["map"])
         self.bg_panel = Panel(panel_width, self.rect.height, self.bg_frames, self.level["background map"])

@@ -25,7 +25,7 @@ game_vars = {
 
 import ctypes
 SCREENSIZE = ctypes.windll.user32.GetSystemMetrics(0), ctypes.windll.user32.GetSystemMetrics(1)
-SCREENSIZE = (1400, 800)
+#SCREENSIZE = (1400, 800)
 
 SCREEN_WIDTH, SCREEN_HEIGHT = SCREENSIZE
 
