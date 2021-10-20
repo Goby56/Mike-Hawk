@@ -6,25 +6,30 @@ from res.widgets import MenuButton
 
 # temp import
 import json, os
-from res.config import tile_frames, tile_frames_bg, sprite_dir, dev_level, game_vars
+from res.config import _base_dir, sprite_dir, game_vars
+from res.tileset import load_set
 
 
 class Game(Phase):
-    def __init__(self, canvas, listener):
+    def __init__(self, canvas, listener, level):
         self.canvas = canvas
         self.listener = listener
         
-        self.backbutton = MenuButton(canvas, listener, (100, 150), "Pop Phase",
+        self.backbutton = MenuButton(canvas, listener, (100, 150), "Back",
             command=self.exit_phase)
         self.tiles = pygame.sprite.Group()
         self.bg_tiles = pygame.sprite.Group()
-        self.tile_size = 40
+        self.tile_size = game_vars["tile_size"]
 
-        self.level = dev_level
+        with open(os.path.join(_base_dir, "levels", f"{level}.json")) as f:
+            self.level = json.load(f)
+
         self.map = self.crop_map(self.level["map"])
         self.bg_map = self.crop_map(self.level["background map"])
-        self.place_tiles(self.tiles, self.map, tile_frames, self.tile_size)
-        self.place_tiles(self.bg_tiles, self.bg_map, tile_frames_bg, self.tile_size)
+
+        tileset = load_set(sprite_dir, self.level["tile set"])
+        self.place_tiles(self.tiles, self.map, tileset["fg"], self.tile_size)
+        self.place_tiles(self.bg_tiles, self.bg_map, tileset["bg"], self.tile_size)
 
         player_dim = (int(self.tile_size*1.5), int(self.tile_size*3))
         spawn = (self.level["spawn"][0]*self.tile_size - player_dim[0]//2, self.level["spawn"][1]*self.tile_size + player_dim[1])
@@ -47,12 +52,18 @@ class Game(Phase):
         self.backbutton.update()
 
     def crop_map(self, map):
-        for i, row in enumerate(map):
+        for start, row in enumerate(map):
             if any(row): break
+        for stop, row in enumerate(map[::-1]):
+            if any(row): break
+        
         lengths = []
-        for j, tile in enumerate(map[i:][::-1]):
-            if tile: lengths.append(j)
-        return [row[min(lengths):] for row in map[i:]]
+        for row in map[start:][::-1]:
+            for i, tile in enumerate(row):
+                if tile: break       
+            lengths.append(i)
+
+        return [row[min(lengths):] for row in map[start:len(map)-stop]]
         
     def place_tiles(self, group, map, frames, size):
         for r, row in enumerate(map):

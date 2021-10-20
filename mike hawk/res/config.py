@@ -5,6 +5,13 @@ BASE_FRICTION = 0.31
 PLAYER_SPEED = 10
 TERMINAL_VELOCITY = 100
 
+import ctypes
+SCREENSIZE = ctypes.windll.user32.GetSystemMetrics(0), ctypes.windll.user32.GetSystemMetrics(1)
+SCREEN_WIDTH, SCREEN_HEIGHT = SCREENSIZE
+print(SCREENSIZE)
+_screen_offset = SCREEN_WIDTH / 1280
+
+
 colors = {
     "white": (255, 255, 255),
     "black": (0, 0, 0),
@@ -16,18 +23,15 @@ colors = {
 }
 
 game_vars = {
-    "gravity": 0.5,
-    "jump strength": 13,
-    "speed": 1.5,
+    "gravity": 0.5*_screen_offset,
+    "jump strength": 13*_screen_offset,
+    "speed": 1.5*_screen_offset,
     "friction": -0.2,
-    "max_vel": 6
+    "max_vel": 6*_screen_offset,
+    "tile_size": int(40*_screen_offset)
 }
 
-import ctypes
-SCREENSIZE = ctypes.windll.user32.GetSystemMetrics(0), ctypes.windll.user32.GetSystemMetrics(1)
-#SCREENSIZE = (1400, 800)
 
-SCREEN_WIDTH, SCREEN_HEIGHT = SCREENSIZE
 
 # LOAD RESOURCES
 import pygame, os
@@ -57,5 +61,5 @@ tile_frames = load_frames("dev_tiles")
 tile_frames_bg = load_frames("dev_tiles_bg")
 
 import json
-with open(os.path.join(_base_dir, "levels", "kadder_test.json")) as f:
+with open(os.path.join(_base_dir, "levels", "test.json")) as f:
     dev_level = json.load(f)

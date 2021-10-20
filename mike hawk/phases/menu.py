@@ -30,8 +30,8 @@ class MainMenu(Phase):
 class MapMenu(Phase):
     def __init__(self, canvas, listener):
         self.buttonpanel = MenuButtonPanel(canvas, listener, (200, 100), 6, 20, 
-            ["Dev Map", "Map 1", "Map 2", "Map 3", "Map 4", "Back"],
-            [lambda: Game(canvas, listener).enter_phase(), lambda: print("Map 1"), lambda: print("Map 2"), 
+            ["test", "kadder_test", "Map 2", "Map 3", "Map 4", "Back"],
+            [lambda: Game(canvas, listener, "test").enter_phase(), lambda: Game(canvas, listener, "kadder_test").enter_phase(), lambda: print("Map 2"), 
             lambda: print("Map 3"), lambda: print("Map 4"), self.exit_phase]
         )
 

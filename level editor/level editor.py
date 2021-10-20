@@ -5,6 +5,7 @@ import tkinter as tk
 from tkinter import filedialog as fd
 
 from spritesheet import Spritesheet
+from tileset import load_set
 
 SCREENSIZE = [ctypes.windll.user32.GetSystemMetrics(0), ctypes.windll.user32.GetSystemMetrics(1)]
 SCREENSIZE[0] //= 2
@@ -12,9 +13,10 @@ SCREENSIZE[1] //= 2
 
 MAX_X, MAX_Y = 512, 256
 
-# func för bara get_mouse
+# bör göra om struktur på karta, [[(tile, layer), (tile, layer), (tile, layer)]]
 
 base_dir = os.path.abspath(os.path.dirname(__file__))
+asset_dir = os.path.join(base_dir, "assets")
 map_dir = os.path.join(base_dir, "maps")
 
 def try_create_file(path):
@@ -80,9 +82,8 @@ class App:
         self.level, self.level_path = load_map(level.name)
 
         if not "tile set" in self.level.keys():
-            self.level["tile set"] = "dev_tiles"
-        self.frames = load_frames(self.level["tile set"])
-        self.bg_frames = load_frames("dev_tiles_bg")
+            self.level["tile set"] = "dev_tileset"
+        self.tileset = load_set(asset_dir, self.level["tile set"])
 
         if not "spawn" in self.level.keys():
             self.level["spawn"] = (0, 0)
@@ -108,8 +109,8 @@ class App:
         # widgets
         panel_width = SCREENSIZE[0] // 4
         self.panel_rect = pygame.Rect((self.rect.width - panel_width, 0), (panel_width, self.rect.height))
-        self.main_panel = Panel(panel_width, self.rect.height, self.frames, self.level["map"])
-        self.bg_panel = Panel(panel_width, self.rect.height, self.bg_frames, self.level["background map"])
+        self.main_panel = Panel(panel_width, self.rect.height, self.tileset["fg"], self.level["map"])
+        self.bg_panel = Panel(panel_width, self.rect.height, self.tileset["bg"], self.level["background map"])
 
         self.panels = [self.main_panel, self.bg_panel]
         self.page = 0
@@ -125,14 +126,14 @@ class App:
         self.spawn_surface = pygame.image.load(os.path.join(base_dir, "assets", "spawn_point.png"))
 
         # load tiles from save
-        self.load_tiles(self.level["map"], self.frames)
-        self.load_tiles(self.level["background map"], self.bg_frames)
+        self.load_tiles(self.level["map"], self.tileset["fg"])
+        self.load_tiles(self.level["background map"], self.tileset["bg"])
 
-    def load_tiles(self, map, frames):
+    def load_tiles(self, map, set):
         for y, row in enumerate(map):
             for x, tile in enumerate(row):
                 if tile:
-                    Tile(self.canvas, (x, y), frames[tile-1], tile-1, map)
+                    Tile(self.canvas, (x, y), set[tile-1], tile-1, map)
 
     def main(self):
         self.render()
