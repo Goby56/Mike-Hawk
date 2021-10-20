@@ -30,11 +30,12 @@ class Game(Phase):
         tileset = load_set(sprite_dir, self.level["tile set"])
         self.place_tiles(self.tiles, self.map, tileset["fg"], self.tile_size)
         self.place_tiles(self.bg_tiles, self.bg_map, tileset["bg"], self.tile_size)
+        self.paralax = Paralax(canvas)
 
         player_dim = (int(self.tile_size*1.5), int(self.tile_size*3))
         spawn = (self.level["spawn"][0]*self.tile_size - player_dim[0]//2, self.level["spawn"][1]*self.tile_size + player_dim[1])
-        print(spawn, self.level["spawn"])
         self.player = Player(listener, canvas, spawn, player_dim)
+        
         self.camera = Camera(self, canvas)
         self.scroll = pygame.Vector2(0, 0)
 
@@ -46,6 +47,7 @@ class Game(Phase):
         self.tiles.update(self.scroll)
 
     def render(self):
+        self.paralax.render()
         self.tiles.draw(self.canvas)
         self.bg_tiles.draw(self.canvas)
         self.player.render()
@@ -228,6 +230,11 @@ class Player(pygame.sprite.Sprite):
     def get_collisions(self, group):
         collisions = pygame.sprite.spritecollide(self, group, False)
         return collisions
+
+
+class Paralax:
+    def __init__(self, canvas):
+        pass
 
 
 class Tile(pygame.sprite.Sprite):
