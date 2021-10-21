@@ -45,13 +45,15 @@ class Game(Phase):
         self.limit_player()
         self.bg_tiles.update(self.scroll)
         self.tiles.update(self.scroll)
+        self.paralax.update()
 
     def render(self):
-        self.paralax.render()
+        self.paralax.render(method = "bg")
         self.tiles.draw(self.canvas)
         self.bg_tiles.draw(self.canvas)
         self.player.render()
         self.backbutton.update()
+        self.paralax.render(method = "fg")
 
     def crop_map(self, map):
         for start, row in enumerate(map):
@@ -234,6 +236,12 @@ class Player(pygame.sprite.Sprite):
 
 class Paralax:
     def __init__(self, canvas):
+        pass
+
+    def update(self):
+        pass
+
+    def render(self, method):
         pass
 
 
