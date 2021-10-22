@@ -48,8 +48,10 @@ class Tile:
         self.x, self.y = pos
         self.canvas = canvas
         Tile.tiles.append(self)
-        self.map[int(self.y)][int(self.x)][0] = index + 1
-        self.map[int(self.y)][int(self.x)][1] = layer
+        x, y = int(self.x), int(self.y)
+
+        self.map[y][x][0] = index + 1
+        self.map[y][x][1] = layer
 
     def update(self, width, offset):
         surf = pygame.transform.scale(self.frame, (width, width))
@@ -87,13 +89,14 @@ class App:
         self.tileset = load_set(asset_dir, self.level["tile set"])
 
         if not "spawn" in self.level.keys():
-            self.level["spawn"] = (0, "fg")
+            self.level["spawn"] = (0, 0)
 
         if not "map" in self.level.keys():
+            self.level["map"] = []
             for rows in range(MAX_Y):
                 self.level["map"].append([])
                 for columns in range(MAX_X):
-                    self.level["map"][rows].append((0, 0))
+                    self.level["map"][rows].append([0, "fg"])
         else:
             self.level["map"].reverse()
 
@@ -124,13 +127,17 @@ class App:
         self.spawn_surface = pygame.image.load(os.path.join(base_dir, "assets", "spawn_point.png"))
 
         # load tiles from save
-        self.load_tiles(self.level["map"])
+        self.load_tiles()
+        # self.load_tiles("dt")
 
-    def load_tiles(self, map):
-        for y, row in enumerate(map):
+    def load_tiles(self):
+        for y, row in enumerate(self.level["map"]):
             for x, tile in enumerate(row):
                 if tile[0]:
-                    Tile(self.canvas, (x, y), set[tile-1], tile-1, self.tileset[tile[1]])
+                    index = tile[0]-1
+                    layer = tile[1]
+                    Tile(self.canvas, (x, y), self.tileset[layer][index], 
+                        index, self.level["map"], layer)
 
     def main(self):
         self.render()
@@ -226,13 +233,12 @@ class App:
                 Tile.get_tile(x, y).destroy()
         else:
             if mode == "place":
-                Tile(self.canvas, (x, y), panel.frames[index], index, self.map, panel.layer)
+                Tile(self.canvas, (x, y), panel.frames[index], index, self.level["map"], panel.layer)
             elif mode == "spawn":
                 self.level["spawn"] = (x, y)
 
     def save(self):
         self.level["map"].reverse()
-        self.level["background map"].reverse()
         with open(self.level_path, "w") as file:
             json.dump(self.level, file)
 
@@ -270,9 +276,9 @@ def panel_loop(num_frames):
 
 
 class Panel:
-    def __init__(self, width, height, tiles, map):
+    def __init__(self, width, height, tiles, layer):
         self.width= width
-        self.map = map
+        self.layer = layer
         self.frames = tiles
 
         self.padding = 10
