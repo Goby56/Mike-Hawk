@@ -42,13 +42,14 @@ def real_pos(pos, obj_height = 0):
 
 class Tile:
     tiles = []
-    def __init__(self, canvas, pos, frame, index, map):
+    def __init__(self, canvas, pos, frame, index, map, layer):
         self.frame = frame
         self.map = map
         self.x, self.y = pos
         self.canvas = canvas
         Tile.tiles.append(self)
-        self.map[int(self.y)][int(self.x)] = index + 1
+        self.map[int(self.y)][int(self.x)][0] = index + 1
+        self.map[int(self.y)][int(self.x)][1] = layer
 
     def update(self, width, offset):
         surf = pygame.transform.scale(self.frame, (width, width))
@@ -86,19 +87,16 @@ class App:
         self.tileset = load_set(asset_dir, self.level["tile set"])
 
         if not "spawn" in self.level.keys():
-            self.level["spawn"] = (0, 0)
+            self.level["spawn"] = (0, "fg")
 
-        self.new_level = False
         if not "map" in self.level.keys():
-            self.level["map"] = np.zeros((MAX_X, MAX_Y), dtype=int).tolist()
-            self.new_level = True
+            for rows in range(MAX_Y):
+                self.level["map"].append([])
+                for columns in range(MAX_X):
+                    self.level["map"][rows].append((0, 0))
         else:
             self.level["map"].reverse()
 
-        if not "background map" in self.level.keys():
-            self.level["background map"] = np.zeros((MAX_X, MAX_Y), dtype=int).tolist()
-        else:
-            self.level["background map"].reverse()
 
         # pygame stuff
         self.display = pygame.display.set_mode(SCREENSIZE)
@@ -109,8 +107,8 @@ class App:
         # widgets
         panel_width = SCREENSIZE[0] // 4
         self.panel_rect = pygame.Rect((self.rect.width - panel_width, 0), (panel_width, self.rect.height))
-        self.main_panel = Panel(panel_width, self.rect.height, self.tileset["fg"], self.level["map"])
-        self.bg_panel = Panel(panel_width, self.rect.height, self.tileset["bg"], self.level["background map"])
+        self.main_panel = Panel(panel_width, self.rect.height, self.tileset["fg"], "fg")
+        self.bg_panel = Panel(panel_width, self.rect.height, self.tileset["bg"], "bg")
 
         self.panels = [self.main_panel, self.bg_panel]
         self.page = 0
@@ -126,14 +124,13 @@ class App:
         self.spawn_surface = pygame.image.load(os.path.join(base_dir, "assets", "spawn_point.png"))
 
         # load tiles from save
-        self.load_tiles(self.level["map"], self.tileset["fg"])
-        self.load_tiles(self.level["background map"], self.tileset["bg"])
+        self.load_tiles(self.level["map"])
 
-    def load_tiles(self, map, set):
+    def load_tiles(self, map):
         for y, row in enumerate(map):
             for x, tile in enumerate(row):
-                if tile:
-                    Tile(self.canvas, (x, y), set[tile-1], tile-1, map)
+                if tile[0]:
+                    Tile(self.canvas, (x, y), set[tile-1], tile-1, self.tileset[tile[1]])
 
     def main(self):
         self.render()
@@ -229,7 +226,7 @@ class App:
                 Tile.get_tile(x, y).destroy()
         else:
             if mode == "place":
-                Tile(self.canvas, (x, y), panel.frames[index], index, panel.map)
+                Tile(self.canvas, (x, y), panel.frames[index], index, self.map, panel.layer)
             elif mode == "spawn":
                 self.level["spawn"] = (x, y)
 
