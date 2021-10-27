@@ -59,6 +59,7 @@ def load_frames(filename):
 dynamite_frames = load_frames("dynamite")
 tile_frames = load_frames("dev_tiles")
 tile_frames_bg = load_frames("dev_tiles_bg")
+paralax_layers = load_frames("desertdemo")
 
 import json
 with open(os.path.join(_base_dir, "levels", "test.json")) as f:

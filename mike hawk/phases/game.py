@@ -6,7 +6,7 @@ from res.widgets import MenuButton
 
 # temp import
 import json, os
-from res.config import _base_dir, sprite_dir, game_vars
+from res.config import _base_dir, sprite_dir, game_vars, paralax_layers
 from res.tileset import load_set
 
 
@@ -30,7 +30,7 @@ class Game(Phase):
         tileset = load_set(sprite_dir, self.level["tile set"])
         self.place_tiles(self.tiles, self.map, tileset["fg"], self.tile_size)
         self.place_tiles(self.bg_tiles, self.bg_map, tileset["bg"], self.tile_size)
-        self.paralax = Paralax(canvas)
+        self.paralax = Paralax(canvas, paralax_layers)
 
         player_dim = (int(self.tile_size*1.5), int(self.tile_size*3))
         spawn = (self.level["spawn"][0]*self.tile_size - player_dim[0]//2, self.level["spawn"][1]*self.tile_size + player_dim[1])
@@ -176,9 +176,9 @@ class Player(pygame.sprite.Sprite):
         self.rect.midbottom = self.pos.xy
 
     def render(self):
-        pygame.draw.rect(self.canvas, (255,0,0), self.rect)
+        #pygame.draw.rect(self.canvas, (255,0,0), self.rect)
         self.canvas.blit(self.image, self.rect.topleft)
-        pygame.draw.line(self.canvas, (0,0,255), self.pos.xy, self.pos.xy + (0,-100))
+        #pygame.draw.line(self.canvas, (0,0,255), self.pos.xy, self.pos.xy + (0,-100))
 
     def horizontal_movement(self, dt):
         dt *= 60
@@ -235,14 +235,20 @@ class Player(pygame.sprite.Sprite):
 
 
 class Paralax:
-    def __init__(self, canvas):
-        pass
+    def __init__(self, canvas, layers):
+        self.layers = layers
+        for i, layer in enumerate(self.layers):
+            self.layers[i] = pygame.transform.scale(layer, canvas.get_size())
+        self.canvas = canvas
 
     def update(self):
         pass
 
     def render(self, method):
-        pass
+        if method == "bg":
+            for image in self.layers:
+                self.canvas.blit(image, (0,0))
+        
 
 
 class Tile(pygame.sprite.Sprite):
