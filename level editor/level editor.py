@@ -49,7 +49,6 @@ class Tile:
         self.canvas = canvas
         Tile.tiles.append(self)
         x, y = int(self.x), int(self.y)
-
         self.map[y][x][0] = index + 1
         self.map[y][x][1] = layer
 
@@ -58,7 +57,7 @@ class Tile:
         self.canvas.blit(surf, real_pos((self.x*width+offset[0], self.y*width+offset[1]), width))
 
     def destroy(self):
-        self.map[int(self.y)][int(self.x)] = 0
+        self.map[int(self.y)][int(self.x)][0] = 0
         Tile.tiles.remove(self)
 
     @classmethod
