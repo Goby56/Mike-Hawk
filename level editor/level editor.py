@@ -30,7 +30,7 @@ def load_map(path):
         json_dict = json.load(file)
     return json_dict, path
 
-def load_frames(filename):
+def load_frames(filename): # används inte
     spritesheet = Spritesheet(filename) # Create object of file path
     data = spritesheet.parse_sprite() # Get meta data from sheet
     frames = spritesheet.get_frames(data) # Get sequence of frames
