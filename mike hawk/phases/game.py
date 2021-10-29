@@ -6,7 +6,7 @@ from res.widgets import MenuButton
 
 # temp import
 import json, os
-from res.config import _base_dir, sprite_dir, game_vars, paralax_layers
+from res.config import _base_dir, sprite_dir, game_vars, paralax_layers, SCREEN_HEIGHT
 from res.tileset import load_set
 
 
@@ -26,26 +26,27 @@ class Game(Phase):
         self.map = self.level["map"]
 
         tileset = load_set(sprite_dir, self.level["tile set"])
-        self.place_tiles(self.tiles, self.map, tileset, True, self.tile_size)
-        self.place_tiles(self.other_tiles, self.map, tileset, False, self.tile_size)
+        self.place_tiles(tileset)
         self.paralax = Paralax(canvas, paralax_layers)
 
+        world_height = self.get_world_dimensions()[1]
         player_dim = (int(self.tile_size*1.5), int(self.tile_size*3))
         spawn = (self.level["spawn"][0]*self.tile_size - player_dim[0]//2, 
-            self.level["spawn"][1]*self.tile_size + player_dim[1])
+            world_height - self.level["spawn"][1]*self.tile_size - player_dim[1])
         self.player = Player(listener, canvas, spawn, player_dim)
         
         self.camera = Camera(self, canvas)
         self.scroll = pygame.Vector2(0, 0)
 
-    def place_tiles(self, group, map, tileset, fg, size):
-        for r, row in enumerate(map):
+    def place_tiles(self, tileset):
+        for r, row in enumerate(self.map):
             for c, tile in enumerate(row):
                 if tile[0]:
-                    if fg:
-                        group.add(Tile((c,r), size, tileset["fg"][tile[0]-1]))
+                    new_tile = Tile((c,r), self.tile_size, tileset[tile[1]][tile[0]-1])
+                    if tile[1] == "fg":
+                        self.tiles.add(new_tile)
                     else:
-                        group.add(Tile((c,r), size, tileset[tile[1]][tile[0]-1]))
+                        self.other_tiles.add(new_tile)
 
     def update(self, dt):
         self.scroll = self.camera.get_offset()
@@ -88,6 +89,9 @@ class Game(Phase):
             self.player.rect.left = 0
 
         self.player.pos.xy = self.player.rect.midbottom
+
+    def kill(self):
+        print("killed player")
 
 
 class Camera:
