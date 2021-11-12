@@ -1,6 +1,7 @@
 import pygame
-from pygame.constants import KEYUP
 from res.config import PYGAME_CAPS_KEYS
+
+# lägg till counters i en dict. functioner som använder counters tar in en key
 
 class Listener:
     """
@@ -15,6 +16,7 @@ class Listener:
         self._events = []
         self._mouse = []
         self._keys_up = []
+        self._counters = {}
         self._counter1, self._counter2 = 0, 0
         self._counter3, self._counter4 = 0, 0
         self._last_key = None
