@@ -30,7 +30,7 @@ class Main:
         
         current_phase = Phase.get_current()
         current_phase.update(self.dt)
-        current_phase.render()   
+        current_phase.render()
 
         self._display.blit(self.canvas, (0, 0))
         pygame.display.update()

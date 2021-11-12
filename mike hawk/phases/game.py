@@ -54,7 +54,7 @@ class Game(Phase):
         self.limit_player()
         self.other_tiles.update(self.scroll)
         self.tiles.update(self.scroll)
-        self.paralax.update()
+        self.paralax.update(self.scroll)
 
     def render(self):
         self.paralax.render(method = "bg")
@@ -135,9 +135,9 @@ class Camera:
             self.total_offset.y = 0
 
         world_dim = self.game.get_world_dimensions()
-        if self.abs_x > 2680 - 2*self.MIDDLE.x:
+        if self.abs_x > world_dim[0] - 2*self.MIDDLE.x:
             self.offset.x = 0
-            self.total_offset.x = 2680 - 2*self.MIDDLE.x
+            self.total_offset.x = world_dim[0] - 2*self.MIDDLE.x
 
         if self.abs_y > world_dim[1] - 2*self.MIDDLE.y:
             self.offset.y = 0
@@ -180,6 +180,8 @@ class Player(pygame.sprite.Sprite):
         self.scroll_offset += scroll
         self.pos.x += -(scroll.x)
         self.pos.y += -(scroll.y)
+
+        print(self.pos)
 
         self.rect.midbottom = self.pos.xy
 
@@ -244,20 +246,21 @@ class Player(pygame.sprite.Sprite):
 
 class Paralax:
     def __init__(self, canvas, layers):
-        self.layers = layers
+        self.layers = [[image, [0,0]] for image in layers]
         for i, layer in enumerate(self.layers):
-            self.layers[i] = pygame.transform.scale(layer, canvas.get_size())
+            print(layer)
+            self.layers[i][0] = pygame.transform.scale(layer[0], canvas.get_size())
         self.canvas = canvas
 
-    def update(self):
-        pass
+    def update(self, scroll):
+        for i in range(len(self.layers)-1):
+            self.layers[1:][i][1][0] += -scroll.x*(i+1)**2/50  
 
     def render(self, method):
         if method == "bg":
-            for image in self.layers:
-                self.canvas.blit(image, (0,0))
+            for layer in self.layers:
+                self.canvas.blit(layer[0], (layer[1]))
         
-
 
 class Tile(pygame.sprite.Sprite):
     def __init__(self, pos, size, image):
