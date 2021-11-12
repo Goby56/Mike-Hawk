@@ -22,7 +22,7 @@ class Main:
         self.listener.listen()
 
         self.listener.on_event("quit", quit)
-        self.listener.on_key("escape", quit) 
+        self.listener.on_key("escape", quit)
 
         self.get_dt()
         for timer in self.timers:
