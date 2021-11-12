@@ -21,16 +21,16 @@ class Main:
         self.canvas.fill(colors["white knight"])
         self.listener.listen()
 
+        self.listener.on_event("quit", quit)
+        self.listener.on_key("escape", quit) 
+
         self.get_dt()
         for timer in self.timers:
             timer += self.dt
         
         current_phase = Phase.get_current()
         current_phase.update(self.dt)
-        current_phase.render()
-
-        self.listener.on_event("quit", quit)
-        self.listener.on_key("escape", quit)    
+        current_phase.render()   
 
         self._display.blit(self.canvas, (0, 0))
         pygame.display.update()
