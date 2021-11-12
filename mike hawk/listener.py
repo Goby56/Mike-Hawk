@@ -1,8 +1,6 @@
 import pygame
 from res.config import PYGAME_CAPS_KEYS
 
-# lägg till counters i en dict. functioner som använder counters tar in en key
-
 class Listener:
     """
     Example:\n
@@ -10,6 +8,7 @@ class Listener:
     while True:\n
         listner.listen()\n
         listner.on_event("quit", quit)\n
+        listener.key_pressed("a", hold=True, trigger=10, id="a_pressed_0") # id is counter id
     """
     def __init__(self):
         self._keys = []
@@ -17,10 +16,26 @@ class Listener:
         self._mouse = []
         self._keys_up = []
         self._counters = {}
-        self._counter1, self._counter2 = 0, 0
-        self._counter3, self._counter4 = 0, 0
         self._last_key = None
         self._last_mouse = None
+
+    def _create_key(self, id):
+        if not id in self._counters.keys():
+            self._counters[id] = 0
+
+    def _holder(self, duration, id, current, last, mouse=False):
+        if current and last:
+            self._counters[id] += 1
+        else:
+            self._counters[id] = 0
+
+        if mouse: self._last_mouse = current
+        else: self._last_key = current
+
+        if self._counters[id] == duration:
+            self._counters[id] = 0
+            return duration
+        return self._counters[id]
 
     def listen(self):
         self._keys, self._events, self._mouse = [], [], []
@@ -37,32 +52,26 @@ class Listener:
                 self._mouse.append(event.button)
             
 
-    def key_hold(self, key: str, duration: int): # fix for multible holds
+    def key_hold(self, key: str, duration: int, id=""):
+        self._create_key(id)
         current_key = self.key_pressed(key, hold=True)
-        if current_key and self._last_key:
-            self._counter2 += 1
-        else:
-            self._counter2 = 0
-        self._last_key = current_key
-        if self._counter2 == duration:
-            self._counter2 = 0
-            return duration
-        return self._counter2
+        return self._holder(duration, id, current_key, self._last_key)
 
-    def key_pressed(self, key: str, hold=False, trigger=1): # fix 
+    def key_pressed(self, key: str, hold=False, trigger=1, id=""):
+        self._create_key(id)
         if not hold:
             if key in self._keys:
                 return True
             return False
         
-        self._counter1 += 1
+        self._counters[id] += 1
         keys = pygame.key.get_pressed()
         if key in PYGAME_CAPS_KEYS.keys():
-            if keys[PYGAME_CAPS_KEYS[key]] and self._counter1 % trigger == 0:
+            if keys[PYGAME_CAPS_KEYS[key]] and self._counters[id] % trigger == 0:
                 return True
             return False
 
-        if keys[eval(f"pygame.K_{key}")] and self._counter1 % trigger == 0:
+        if keys[eval(f"pygame.K_{key}")] and self._counters[id] % trigger == 0:
             return True
         return False
 
@@ -71,28 +80,22 @@ class Listener:
             return True
         return False
 
-    def mouse_clicked(self, mouse: int, hold=False, trigger=1): # fix
+    def mouse_clicked(self, mouse: int, hold=False, trigger=1, id=""):
+        self._create_key(id)
         if not hold:
             if mouse in self._mouse:
                 return True
             return False
         
-        self._counter3 += 1
-        if pygame.mouse.get_pressed()[mouse-1] and self._counter3 % trigger == 0:
-            self._counter3 = 0
+        self._counters[id] += 1
+        if pygame.mouse.get_pressed()[mouse-1] and self._counters[id] % trigger == 0:
+            self._counters[id] = 0
             return True
 
-    def mouse_hold(self, mouse: int, duration: int): # fix for multible holds
+    def mouse_hold(self, mouse: int, duration: int, id=""):
+        self._create_key(id)
         current_mouse = self.mouse_clicked(mouse, hold=True)
-        if current_mouse and self._last_mouse:
-            self._counter4 += 1
-        else:
-            self._counter4 = 0
-
-        if self._counter4 == duration:
-            self._counter4 = 0
-            return duration
-        return self._counter4
+        return self._holder(duration, id, current_mouse, self._last_mouse, True)
 
     def on_key(self, key: str, func):
         if key in self._keys:
