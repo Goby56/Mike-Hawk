@@ -244,7 +244,11 @@ class Paralax:
     def render(self, method):
         if method == "bg":
             for layer in self.layers:
-                self.canvas.blit(layer[0], (layer[1]))
+                x = layer[1][0]
+                y = layer[1][1]
+                self.canvas.blit(layer[0], (x, y))
+                self.canvas.blit(layer[0], (x+self.canvas.get_width(), y))
+                self.canvas.blit(layer[0], (x-self.canvas.get_width(), y))
         
 
 class Tile(pygame.sprite.Sprite):
