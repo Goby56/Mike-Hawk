@@ -64,21 +64,6 @@ class Game(Phase):
         self.backbutton.update()
         self.paralax.render(method = "fg")
 
-    def crop_map(self, map):
-        map = [[c for c in r] for r in map]
-        for start, row in enumerate(map):
-            if any([c[0] for c in row]): break
-        for stop, row in enumerate(map[::-1]):
-            if any([c[0] for c in row]): break
-        
-        lengths = []
-        for row in map[start:]:
-            for i, tile in enumerate(row[::-1]):
-                if tile[0]: break
-            lengths.append(i)
-        print(min(lengths), start, len(map)-stop)
-        return [row[:len(row) - min(lengths)] for row in map[start:len(map)-stop]]
-
     def get_world_dimensions(self):
         return (len(self.map[0]) * self.tile_size, len(self.map) * self.tile_size)
 
