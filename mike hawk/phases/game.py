@@ -166,7 +166,7 @@ class Player(pygame.sprite.Sprite):
         self.pos.x += -(scroll.x)
         self.pos.y += -(scroll.y)
 
-        print(self.pos)
+        #print(self.pos)
 
         self.rect.midbottom = self.pos.xy
 
@@ -233,14 +233,18 @@ class Paralax:
     def __init__(self, canvas, layers):
         self.layers = [[image, [0,0]] for image in layers]
         for i, layer in enumerate(self.layers):
-            print(layer)
             self.layers[i][0] = pygame.transform.scale(layer[0], canvas.get_size())
         self.canvas = canvas
-
+        self.total_scroll_x = 0
+    
     def update(self, scroll):
+        self.total_scroll_x += scroll.x
         for i in range(len(self.layers)-1):
-            self.layers[1:][i][1][0] += -scroll.x*(i+1)**2/50  
-
+            layer_offset = -self.total_scroll_x*(i+1)**2/50
+            index = -layer_offset//self.canvas.get_width()
+            self.layers[1:][i][1][0] = layer_offset 
+            self.layers[1:][i][1][0] += index*self.canvas.get_width()
+        
     def render(self, method):
         if method == "bg":
             for layer in self.layers:
