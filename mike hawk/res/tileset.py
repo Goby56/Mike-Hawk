@@ -18,7 +18,7 @@ def load_set(dir, filename):
         w, h = frame["frame"]["w"], frame["frame"]["h"]
         tile_data[name] = (x, y, w, h)
 
-    tileset = {"fg": [], "bg": [], "dt": []}
+    tileset = {"fg": [], "bg": []}
     for name, tile in tile_data.items():
         tileset[name[:2]].append(crop_image(image, tile))
 
