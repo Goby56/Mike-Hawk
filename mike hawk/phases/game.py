@@ -3,10 +3,11 @@ sys.path.append("..")
 
 from .phase import Phase
 from res.widgets import MenuButton
+from res.animator import Animator
 
 # temp import
 import json, os
-from res.config import _base_dir, sprite_dir, game_vars, paralax_layers, SCREEN_HEIGHT
+from res.config import _base_dir, sprite_dir, game_vars, paralax_layers, player_animations, SCREEN_HEIGHT
 from res.tileset import load_set
 
 
@@ -83,7 +84,7 @@ class Camera:
     def __init__(self, game, canvas):
         self.game = game
         self.player = game.player
-       
+        
         self.CANVAS_W, self.CANVAS_H = canvas.get_size()
         self.MIDDLE = pygame.Vector2(self.CANVAS_W/2, self.CANVAS_H/2)
 
@@ -138,15 +139,27 @@ class Player(pygame.sprite.Sprite):
         self.listener = listener
         self.canvas = canvas
         self.pos = pygame.Vector2(pos)
-        self.image = pygame.transform.scale(pygame.image.load(os.path.join(sprite_dir,
-             "mike.png")), (size))
+        self.image = pygame.transform.scale(pygame.image.load(os.path.join(sprite_dir, "player_idle.png")), size)
+        self.frames = player_animations
+        for i, frame in enumerate(self.frames):
+            self.frames[i] = pygame.transform.scale(frame, size)
         self.width, self.height = self.image.get_width(), self.image.get_height()
         self.rect = self.image.get_rect(midbottom=self.pos)
+
+        # self.tags = {
+        #     "collisions" : {"right":False, "left":False, "top":False, "bottom":False},
+        #     "state" : {"idle":False, "walking":False, "jumping":False},
+        #     "facing" : {"left":False, "right":True}
+        # }
         self.collisions = {"right":False, "left":False, "top":False, "bottom":False}
+        self.state = {"idle":False, "walking":False, "jumping":False}
+        self.facing = {"left":False, "right":True}
+
         self.acceleration = pygame.Vector2(0, game_vars["gravity"])
         self.velocity = pygame.Vector2(0, 0)
         self.onground = False
         self.scroll_offset = pygame.Vector2(0, 0)
+        self.animator = Animator(self.frames, 0.2)
 
     @property
     def abs_x(self):
@@ -157,6 +170,8 @@ class Player(pygame.sprite.Sprite):
         return self.pos.y - self.scroll_offset.y
 
     def update(self, dt, collisions_objects, scroll):
+        #self.reset_tags()
+
         self.horizontal_movement(dt)
         self.handle_collisions(self.get_collisions(collisions_objects), axis=0)
         self.vertical_movement(dt)
@@ -166,19 +181,33 @@ class Player(pygame.sprite.Sprite):
         self.pos.x += -(scroll.x)
         self.pos.y += -(scroll.y)
 
-        #print(self.pos)
-
         self.rect.midbottom = self.pos.xy
 
     def render(self):
-        #image = animator.get_current_frame(self.frames, delay)
-        self.canvas.blit(self.image, self.rect.topleft)
+
+        
+        if abs(self.velocity.x) > game_vars["max_vel"]*0.25:
+            frame = self.animator.get_frame()
+            if self.velocity.x < 0:
+                frame = pygame.transform.flip(frame, True, False)
+        else:
+            frame = self.image
+            if self.facing["left"]:
+                frame = pygame.transform.flip(frame, True, False)
+
+
+        self.canvas.blit(frame, self.rect.topleft)
 
     def horizontal_movement(self, dt):
         dt *= 60
         key_a = self.listener.key_pressed("a", hold=True)
         key_d = self.listener.key_pressed("d", hold=True)
         direction = key_d - key_a
+        if direction == 1:
+            self.facing["left"], self.facing["right"] = False, True 
+        if direction == -1:
+            self.facing["left"], self.facing["right"] = True, False
+
         self.acceleration.x = game_vars["speed"]*direction
 
         self.velocity.x += dt*(self.acceleration.x + self.velocity.x*game_vars["friction"])
@@ -203,6 +232,11 @@ class Player(pygame.sprite.Sprite):
             self.velocity.x = max_velocity if self.velocity.x > 0 else -max_velocity 
         if abs(self.velocity.x) < 0.1: self.velocity.x = 0
 
+    def reset_tags(self):
+        for tag in self.tags.keys():
+            for attribute in self.tags[tag]:
+                self.tags[tag][attribute] = False
+    
     def handle_collisions(self, tile_collisions, axis):
         if tile_collisions:
             for tile in tile_collisions:
