@@ -16,6 +16,7 @@ SCREENSIZE[0] //= 2
 SCREENSIZE[1] //= 2
 
 MAX_X, MAX_Y = 1024, 256 # flytta till config
+SETDIR = os.path.join(_base_dir, "assets", "tilesets")
 pygame.font.init()
 
 def load_level(path):
@@ -26,6 +27,7 @@ def load_level(path):
 class Menu(Phase):
     def __init__(self, canvas, listener):
         self.canvas = canvas
+        self.listener = listener
         self.btn_panel = MenuButtonPanel(
             self.canvas, listener, (10, 10), 3, 10, 
             ["New Map", "Load Map", "Quit"], 
@@ -38,28 +40,50 @@ class Menu(Phase):
         self.btn_panel.update()
 
     def create_file(self, path, tileset):
-        with open(path, "w"):
-            # create tileset key and value
-            # create map key and value
-            # create spawn, 0, max_height
-            # rework map system
-            pass
+        with open(path, "w") as file:
+            level = {}
+            level["tileset"] = tileset.split(".")[0]
+            level["spawn"] = (0, MAX_Y)
+            level["map"] = [[(0, 0) for _ in range(MAX_X)] for _ in range(MAX_Y)]
+            json.dump(level, file)
 
     def new_map(self):
-        tilepath = fd.askopenfilename()
+        tilepath = fd.askopenfilename(
+            initialdir=os.path.join(_base_dir, "assets", "tilesets"),
+            defaultextension='.json', 
+            filetypes=[("tilesets,", '*.png')]
+        )
+        if not tilepath: quit()
         tileset = os.path.split(tilepath)[1]
         level = fd.asksaveasfilename(defaultextension='.json', 
-            filetypes=[("json files", '*.json')])
-        print(level, tileset)
-        # create file
-        # enter editor with level name and path
+            filetypes=[("level files, ", '*.json')], 
+            initialdir=os.path.join(_base_dir, "levels"))
+        if not level: quit()
+        self.create_file(level, tileset)
+        Phase.enter_phase(Editor(self.canvas, 
+            self.listener, level))
 
     def load_map(self):
-        pass
+        level = fd.askopenfilename(defaultextension='.json', 
+            filetypes=[("level files, ", '*.json')], 
+            initialdir=os.path.join(_base_dir, "levels"))
+        Phase.enter_phase(Editor(self.canvas, 
+            self.listener, level))
 
 class Editor(Phase):
-    def __init__(self, level, tileset):
+    def __init__(self, canvas, listener, path):
+        self.canvas = canvas
+        self.listener = listener
+        self.path = path
+        with open(self.path, "r") as file:
+            self.level = json.load(file)
+        tileset = load_set(SETDIR, self.level["tileset"])
+        self.tileset = [layer for layer in tileset[:2]]
+
+    def update(self):
         pass
+
+    # add toolbar and tile selector
 
 class App:
     def __init__(self):
