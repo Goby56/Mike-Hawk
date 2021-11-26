@@ -70,8 +70,7 @@ class Listener:
             if keys[PYGAME_CAPS_KEYS[key]] and self._counters[id] % trigger == 0:
                 return True
             return False
-
-        if keys[eval(f"pygame.K_{key}")] and self._counters[id] % trigger == 0:
+        if keys[eval("pygame.K_" + key)] and self._counters[id] % trigger == 0:
             return True
         return False
 
