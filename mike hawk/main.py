@@ -1,6 +1,7 @@
 import pygame, time
 from listener import Listener
 from res.config import *
+from res.animator import Animator
 from phases.phase import Phase
 from phases.menu import MainMenu
 
@@ -15,6 +16,7 @@ class Main:
         self.timers = {}
         self.canvas = pygame.Surface(SCREENSIZE)
         self.listener = Listener()
+        self.animator = Animator()
         MainMenu(self.canvas, self.listener).enter_phase()
 
     def main_loop(self):

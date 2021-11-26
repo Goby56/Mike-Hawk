@@ -171,9 +171,8 @@ class Player(pygame.sprite.Sprite):
         self.rect.midbottom = self.pos.xy
 
     def render(self):
-        #pygame.draw.rect(self.canvas, (255,0,0), self.rect)
+        #image = animator.get_current_frame(self.frames, delay)
         self.canvas.blit(self.image, self.rect.topleft)
-        #pygame.draw.line(self.canvas, (0,0,255), self.pos.xy, self.pos.xy + (0,-100))
 
     def horizontal_movement(self, dt):
         dt *= 60
