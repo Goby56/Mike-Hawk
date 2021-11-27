@@ -3,6 +3,7 @@ import pygame, json, ctypes, os
 
 import tkinter as tk
 from tkinter import filedialog as fd
+from tkinter import messagebox as mb
 
 from res.tileset import load_set
 from res.widgets import MenuButtonPanel
@@ -95,17 +96,20 @@ class Editor(Phase):
         self.y_offset = 0
 
         # inputs
-        self.func_keys = {"space": False}
+        self.func_keys = {"space": False, "left control": False}
 
     def update(self):
         self.canvas.fill(colors["white knight"])
         for key in self.func_keys.keys():
             self.func_keys[key] = self.listener.key_pressed(key, hold=True)
+        self.listener.on_key("escape", self.exit)
         self.draw_lines()
         self.get_movement()
         self.get_mouse()
         for tile in self.tiles:
             tile.update(self.tile, self.x_offset, self.y_offset)
+        if self.func_keys["left control"] and self.listener.key_pressed("s"):
+            self.save()
 
         pygame.mouse.get_rel()
 
@@ -117,7 +121,7 @@ class Editor(Phase):
     def new_tile(self, x, y, index, layer):
         image = self.tileset[layer][index]
         self.tiles.append(Tile(self.canvas, (x, y), image))
-        self.level["map"][y][x] = [index, layer]
+        self.level["map"][y][x] = [index+1, layer]
 
     def get_movement(self):
         if self.listener.mouse_clicked(4): self.tile -= 1
@@ -133,7 +137,6 @@ class Editor(Phase):
         if self.listener.mouse_clicked(1) and not any(self.func_keys.values()):
             x_pos, y_pos = mouse[0]-self.x_offset, SCREENSIZE[1] - mouse[1]+self.y_offset
             x, y = x_pos//self.tile, MAX_Y - y_pos//self.tile - 1
-            print(x, y_pos//self.tile, y)
             self.new_tile(x, y, 1, 1)
 
     def draw_lines(self):
@@ -146,7 +149,15 @@ class Editor(Phase):
                 (0, SCREENSIZE[1] - y*self.tile + self.y_offset % self.tile), (SCREENSIZE[0], 
                 SCREENSIZE[1] - y*self.tile + self.y_offset % self.tile))
 
-        # + movement % self.tile
+    def save(self):
+        print("Saving...")
+        with open(self.path, "w") as file:
+            json.dump(self.level, file)
+
+    def exit(self):
+        if mb.askyesno("Save?", "Do you want to save?"):
+            self.save()
+        quit()
 
     # add toolbar and tile selector
 

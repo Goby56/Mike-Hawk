@@ -39,7 +39,10 @@ import pygame, os
 SCREEN_RECT = pygame.Rect((0, 0), SCREENSIZE)
 PYGAME_CAPS_KEYS = {
     "space": pygame.K_SPACE,
-    "escape": pygame.K_ESCAPE
+    "escape": pygame.K_ESCAPE,
+    "left shift": pygame.K_LSHIFT,
+    "left control": pygame.K_LCTRL,
+    "left alt": pygame.K_LALT
 }
 
 _base_dir = os.path.abspath(os.path.dirname(__file__))

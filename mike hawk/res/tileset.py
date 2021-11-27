@@ -19,8 +19,10 @@ def load_set(dir, filename):
         tile_data[name] = (x, y, w, h)
 
     tileset = {"fg": [], "bg": []}
-    for name, tile in tile_data.items():
+    new_set = list(zip(tile_data.keys(), tile_data.values()))
+    new_set.sort(key=lambda x: int(x[0][2:]))
+    for t in new_set:
+        name, tile = t
         tileset[name[:2]].append(crop_image(image, tile))
-
     return tileset
     
