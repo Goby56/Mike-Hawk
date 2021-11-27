@@ -44,6 +44,8 @@ class Menu(Phase):
             level = {}
             level["tileset"] = tileset.split(".")[0]
             level["spawn"] = (0, MAX_Y)
+            level["details"] = []
+            level["entities"] = []
             level["map"] = [[(0, 0) for _ in range(MAX_X)] for _ in range(MAX_Y)]
             json.dump(level, file)
 
@@ -86,34 +88,46 @@ class Editor(Phase):
         self.tiles = []
 
         self.load_data()
-        self.new_tile(1, 255, 0, 0)
-        self.new_tile(1, 254, 1, 0)
-        self.new_tile(2, 253, 1, 0)
+
+        self.layer = 0
 
         #movement
         self.x_offset = 0
         self.y_offset = 0
 
         # inputs
-        self.modes = ["place", "delete", "select", "?"]
+        self.modes = ["place", "delete", "select", "entity", "spawn"]
         self.mode = "place"
 
-        tmpc = pygame.Surface((20, 20))
-        tmpc.fill(colors["red"])
-        tmp = lambda: print(".")
-        self.func_keys = {"space": False, "left control": False}
+        tmp = pygame.Surface((20, 20))
+        tmp.fill(colors["red"])
         self.toolbar = Toolbar(self.canvas, self.listener, (70, 0), 
-            [(tmp, tmpc), (tmp, tmpc), (tmp, tmpc), (tmp, tmpc)], 5)
+            [tmp, tmp, tmp, tmp, tmp], 5)
+        self.toolbar.bind(("b", 0), ("e", 1), ("m", 2))
+        
+        self.layer_panel = Toolbar(self.canvas, self.listener, (self.toolbar.pos[0] + self.toolbar.dim[0] + 10, 0), 
+            [tmp, tmp], 5)
+        self.layer_panel.bind(("1", 0), ("2", 1))
 
+        self.func_keys = {"space": False, "left control": False}
+        
         #backgtound
         self.paralax_layers = [pygame.transform.scale(layer, SCREENSIZE) for layer in paralax_layers]
 
+    @property
+    def mouse(self):
+        mouse = pygame.mouse.get_pos()
+        x_pos, y_pos = mouse[0]-self.x_offset, SCREENSIZE[1] - mouse[1]+self.y_offset
+        return x_pos//self.tile, MAX_Y - y_pos//self.tile - 1
+
     def update(self):
-        #self.canvas.fill(colors["white knight"])
         for layer in self.paralax_layers:
             self.canvas.blit(layer, (0, 0))
         self.mode = self.modes[self.toolbar.get_selected()]
-        if any(self.func_keys.values()) or self.toolbar.hover(): self.mode = "other"
+        self.layer = self.layer_panel.get_selected()
+
+        if any(self.func_keys.values()) or self.toolbar.hover() or self.layer_panel.hover(): 
+            self.mode = "other"
 
         for key in self.func_keys.keys():
             self.func_keys[key] = self.listener.key_pressed(key, hold=True)
@@ -121,7 +135,10 @@ class Editor(Phase):
         self.listener.on_event("quit", self.exit)
         
         self.get_movement()
-        self.get_mouse()
+        
+        if self.listener.mouse_clicked(1, hold=True) and self.mode in self.modes:
+                exec("self.{}()".format(self.mode))
+
         for tile in self.tiles:
             tile.update(self.tile, self.x_offset, self.y_offset)
         if self.func_keys["left control"] and self.listener.key_pressed("s"):
@@ -129,6 +146,7 @@ class Editor(Phase):
 
         self.draw_lines()
         self.toolbar.update()
+        self.layer_panel.update()
         pygame.mouse.get_rel()
 
     def load_data(self):
@@ -138,7 +156,7 @@ class Editor(Phase):
 
     def new_tile(self, x, y, index, layer):
         image = self.tileset[layer][index]
-        self.tiles.append(Tile(self.canvas, (x, y), image))
+        self.tiles.append(Tile(self.canvas, (x, y), layer, image))
         self.level["map"][y][x] = [index+1, layer]
 
     def get_movement(self):
@@ -150,12 +168,29 @@ class Editor(Phase):
             self.x_offset += rel[0] if self.x_offset + rel[0] < 0 else 0
             self.y_offset += rel[1] if self.y_offset + rel[1] > 0 else 0
 
-    def get_mouse(self):
-        mouse = pygame.mouse.get_pos()
-        if self.listener.mouse_clicked(1) and self.mode == "place":
-            x_pos, y_pos = mouse[0]-self.x_offset, SCREENSIZE[1] - mouse[1]+self.y_offset
-            x, y = x_pos//self.tile, MAX_Y - y_pos//self.tile - 1
-            self.new_tile(x, y, 1, 1)
+    def place(self):
+        x, y = self.mouse
+        tile = self.get_tile(x, y)
+        if tile and tile.layer != self.layer:
+            return
+        self.new_tile(x, y, 0, self.layer)
+
+    def delete(self):
+        tile = self.get_tile(*self.mouse)
+        if tile and tile.layer == self.layer:
+            self.tiles.remove(tile)
+            self.level["map"][tile.y][tile.x] = [0, 0]
+
+    def spawn(self):
+        x, y = self.mouse
+        print("spawn set at:", x, y)
+        self.level["spawn"] = [x, y]
+
+    def get_tile(self, x, y):
+        for tile in self.tiles:
+            if (tile.x, tile.y) == (x, y):
+                return tile
+        return False
 
     def draw_lines(self):
         for x in range(int(SCREENSIZE[0]//self.tile) + 1):
@@ -204,10 +239,11 @@ class App:
 
 
 class Tile:
-    def __init__(self, canvas, pos, image):
+    def __init__(self, canvas, pos, layer, image):
         self.canvas = canvas
         self.x, self.y = pos
         self.image = image
+        self.layer = layer
 
     def update(self, dim, x_offset, y_offset):
         dim = int(dim)

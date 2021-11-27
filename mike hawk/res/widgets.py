@@ -52,37 +52,38 @@ class MenuButtonPanel:
 
 
 class ToolButton:
-    def __init__(self, canvas, listener, pos, size, command, image):
+    def __init__(self, canvas, listener, pos, size, image):
         self._canvas, self._listener = canvas, listener
         self.x, self.y = pos
         self.size = size
-        self._command = command
         self._image = pygame.transform.scale(image, (size, size))
+        self._binding = False
         self.rect = pygame.Rect(pos, (size, size))
         self.selected = False
 
     def update(self, mouse):
-        if self.rect.collidepoint(mouse[0], mouse[1]):
-            if self._listener.mouse_clicked(1):
-                self.selected = True
-                self._command()
-                return True
+        if ((self.rect.collidepoint(mouse[0], mouse[1]) and self._listener.mouse_clicked(1))
+        or (self._binding and self._listener.key_pressed(self._binding))):
+            self.selected = True
+            return True
         self._canvas.blit(self._image, (self.x, self.y))
         if self.selected:
             pygame.draw.rect(self._canvas, colors["white knight"], (self.x, self.y, self.size, self.size), 3)
         self.rect.topleft = (self.x, self.y)
+
+    def bind(self, key):
+        self._binding = key
             
 
 class Toolbar:
-    def __init__(self, canvas, listener, pos, buttons, padding):
+    def __init__(self, canvas, listener, pos, images, padding):
         self._canvas, self._listener = canvas, listener
         self._buttons = []
         self._mouse = (0, 0)
         
         btn_size = 50
-        num = len(buttons)
         
-        self.dim = (num*(padding+btn_size)+padding, 
+        self.dim = (len(images)*(padding+btn_size)+padding, 
             2*padding + btn_size)
         self.pos = pos
         self.rect = pygame.Rect(pos, self.dim)
@@ -90,10 +91,9 @@ class Toolbar:
         self._surface = pygame.Surface(self.dim)
         self._surface.fill(colors["black magic"])
 
-        for i in range(num):
-            data = buttons[i]
+        for i, image in enumerate(images):
             self._buttons.append(ToolButton(self._canvas, self._listener,
-                (i*btn_size+(i+1)*padding+self.pos[0], padding+self.pos[1]), btn_size, data[0], data[1]))
+                (i*btn_size+(i+1)*padding+self.pos[0], padding+self.pos[1]), btn_size, image))
         self.selected = self._buttons[0]
         self._buttons[0].selected = True
         
@@ -113,6 +113,11 @@ class Toolbar:
 
     def get_selected(self):
         return self._buttons.index(self.selected)
+
+    def bind(self, *args):
+        """args: (key, index)"""
+        for key, index in args:
+            self._buttons[index].bind(key)
 
 if __name__ == "__main__":
     pygame.font.init()
