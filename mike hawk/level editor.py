@@ -1,4 +1,3 @@
-from typing import List
 import pygame, json, ctypes, os
 
 import tkinter as tk
@@ -6,9 +5,9 @@ from tkinter import filedialog as fd
 from tkinter import messagebox as mb
 
 from res.tileset import load_set
-from res.widgets import MenuButtonPanel
+from res.widgets import MenuButtonPanel, Toolbar
 from phases.phase import Phase
-from res.config import colors, _base_dir
+from res.config import colors, _base_dir, paralax_layers
 from listener import Listener
 
 
@@ -96,14 +95,31 @@ class Editor(Phase):
         self.y_offset = 0
 
         # inputs
+        self.modes = ["place", "delete", "select", "?"]
+        self.mode = "place"
+
+        tmpc = pygame.Surface((20, 20))
+        tmpc.fill(colors["red"])
+        tmp = lambda: print(".")
         self.func_keys = {"space": False, "left control": False}
+        self.toolbar = Toolbar(self.canvas, self.listener, (70, 0), 
+            [(tmp, tmpc), (tmp, tmpc), (tmp, tmpc), (tmp, tmpc)], 5)
+
+        #backgtound
+        self.paralax_layers = [pygame.transform.scale(layer, SCREENSIZE) for layer in paralax_layers]
 
     def update(self):
-        self.canvas.fill(colors["white knight"])
+        #self.canvas.fill(colors["white knight"])
+        for layer in self.paralax_layers:
+            self.canvas.blit(layer, (0, 0))
+        self.mode = self.modes[self.toolbar.get_selected()]
+        if any(self.func_keys.values()) or self.toolbar.hover(): self.mode = "other"
+
         for key in self.func_keys.keys():
             self.func_keys[key] = self.listener.key_pressed(key, hold=True)
         self.listener.on_key("escape", self.exit)
-        self.draw_lines()
+        self.listener.on_event("quit", self.exit)
+        
         self.get_movement()
         self.get_mouse()
         for tile in self.tiles:
@@ -111,6 +127,8 @@ class Editor(Phase):
         if self.func_keys["left control"] and self.listener.key_pressed("s"):
             self.save()
 
+        self.draw_lines()
+        self.toolbar.update()
         pygame.mouse.get_rel()
 
     def load_data(self):
@@ -134,7 +152,7 @@ class Editor(Phase):
 
     def get_mouse(self):
         mouse = pygame.mouse.get_pos()
-        if self.listener.mouse_clicked(1) and not any(self.func_keys.values()):
+        if self.listener.mouse_clicked(1) and self.mode == "place":
             x_pos, y_pos = mouse[0]-self.x_offset, SCREENSIZE[1] - mouse[1]+self.y_offset
             x, y = x_pos//self.tile, MAX_Y - y_pos//self.tile - 1
             self.new_tile(x, y, 1, 1)
@@ -174,11 +192,11 @@ class App:
         self.canvas.fill(colors["white knight"])
         self.listerner.listen()
 
-        self.listerner.on_event("quit", quit)
-
         phase = Phase.get_current()
         phase.update()
         phase.render()
+
+        self.listerner.on_event("quit", quit)
 
         self._display.blit(self.canvas, (0, 0))
         pygame.display.update()
