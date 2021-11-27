@@ -16,7 +16,6 @@ class Main:
         self.timers = {}
         self.canvas = pygame.Surface(SCREENSIZE)
         self.listener = Listener()
-        self.animator = Animator()
         MainMenu(self.canvas, self.listener).enter_phase()
 
     def main_loop(self):
@@ -27,8 +26,11 @@ class Main:
         self.listener.on_key("escape", quit)
 
         self.get_dt()
-        for timer in self.timers:
-            timer += self.dt
+        for timer in self.timers.keys():
+            self.timers[timer] += self.dt
+
+        for instance in Animator.instances:
+            instance.update(self.dt)
         
         current_phase = Phase.get_current()
         current_phase.update(self.dt)
