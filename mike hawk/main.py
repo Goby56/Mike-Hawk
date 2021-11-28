@@ -2,6 +2,7 @@ import pygame, time
 from listener import Listener
 from res.config import *
 from res.animator import Animator
+from res.timers import Timer
 from phases.phase import Phase
 from phases.menu import MainMenu
 
@@ -13,7 +14,6 @@ class Main:
         self._clock = pygame.time.Clock()
         self._previous_time = time.time()
         self.dt = 0
-        self.timers = {}
         self.canvas = pygame.Surface(SCREENSIZE)
         self.listener = Listener()
         MainMenu(self.canvas, self.listener).enter_phase()
@@ -26,9 +26,9 @@ class Main:
         self.listener.on_key("escape", quit)
 
         self.get_dt()
-        for timer in self.timers.keys():
-            self.timers[timer] += self.dt
-
+        for timer in Timer.timers:
+            timer.increment(self.dt)
+            
         for instance in Animator.instances:
             instance.update(self.dt)
         
@@ -38,7 +38,7 @@ class Main:
 
         self._display.blit(self.canvas, (0, 0))
         pygame.display.update()
-        self._clock.tick(60)
+        self._clock.tick(fps)
 
     def get_dt(self):
         current_time = time.time()

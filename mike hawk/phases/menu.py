@@ -15,7 +15,7 @@ class MainMenu(Phase):
 
         self.counter = 0
 
-    def update(self, dt):
+    def update(self, *args, **kwargs):
         self.counter += 0.25
         self.buttonpanel.update()
 
@@ -35,7 +35,7 @@ class MapMenu(Phase):
             lambda: print("Map 3"), lambda: print("Map 4"), self.exit_phase]
         )
 
-    def update(self, dt):
+    def update(self, *args, **kwargs):
         self.buttonpanel.update()
 
 
@@ -45,7 +45,7 @@ class OptionsMenu(Phase):
 
         self.backbutton = MenuButton(canvas, listener, (100, 300), "Back", command=self.exit_phase)
 
-    def update(self, dt):
+    def update(self, *args, **kwargs):
         self.backbutton.update()
 
         

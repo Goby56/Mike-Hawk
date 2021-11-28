@@ -14,7 +14,6 @@ class Animator:
         self.counter += self.delay
 
     def get_frame(self):
-        print(int(self.counter%len(self.frames)))
         return self.frames[int(self.counter%len(self.frames))]
 
     def set_frame(self, n, tag=None):

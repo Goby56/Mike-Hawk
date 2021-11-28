@@ -32,8 +32,7 @@ class Listener:
         if mouse: self._last_mouse = current
         else: self._last_key = current
 
-        if self._counters[id] == duration:
-            self._counters[id] = 0
+        if self._counters[id] >= duration:
             return duration
         return self._counters[id]
 
@@ -52,7 +51,7 @@ class Listener:
                 self._mouse.append(event.button)
             
 
-    def key_hold(self, key: str, duration: int, id=""):
+    def key_hold(self, key: str, duration: int, id: str):
         self._create_key(id)
         current_key = self.key_pressed(key, hold=True)
         return self._holder(duration, id, current_key, self._last_key)
