@@ -1,6 +1,6 @@
 from io import SEEK_CUR
 import pygame
-from .config import menubutton, colors
+from .config import SCREENSIZE, menubutton, colors
 
 class MenuButton:
     rect = menubutton.get_rect()
@@ -81,7 +81,7 @@ class Toolbar:
         self._buttons = []
         self._mouse = (0, 0)
         
-        btn_size = 50
+        btn_size = SCREENSIZE[1] // 20
         
         self.dim = (len(images)*(padding+btn_size)+padding, 
             2*padding + btn_size)
