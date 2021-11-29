@@ -19,6 +19,8 @@ MAX_X, MAX_Y = 1024, 256 # flytta till config
 SETDIR = os.path.join(_base_dir, "assets", "tilesets")
 pygame.font.init()
 
+# level["map"] = {"0, 0": [], "2, 3": []}
+
 def load_level(path):
     with open(path, "r") as file:
         json_dict = json.load(file)
@@ -46,7 +48,7 @@ class Menu(Phase):
             level["spawn"] = (0, MAX_Y)
             level["details"] = []
             level["entities"] = []
-            level["map"] = [[(0, 0) for _ in range(MAX_X)] for _ in range(MAX_Y)]
+            level["map"] = {} #[[(0, 0) for _ in range(MAX_X)] for _ in range(MAX_Y)]
             json.dump(level, file)
 
     def new_map(self):
@@ -150,14 +152,15 @@ class Editor(Phase):
         pygame.mouse.get_rel()
 
     def load_data(self):
-        for y, row in enumerate(self.level["map"]):
-            for x, node in enumerate(row):
-                if node[0]: self.new_tile(x, y, node[0]-1, node[1])
+        for tile in self.level["map"]:
+            x, y = tile.split(", ")
+            layer = self.level["map"][tile]
+            self.new_tile(int(x), int(y), layer[0], layer[1])
 
     def new_tile(self, x, y, index, layer):
         image = self.tileset[layer][index]
         self.tiles.append(Tile(self.canvas, (x, y), layer, image))
-        self.level["map"][y][x] = [index+1, layer]
+        self.level["map"][f"{x}, {y}"] = [index, layer]
 
     def get_movement(self):
         if self.listener.mouse_clicked(4): self.tile -= 1
@@ -179,7 +182,7 @@ class Editor(Phase):
         tile = self.get_tile(*self.mouse)
         if tile and tile.layer == self.layer:
             self.tiles.remove(tile)
-            self.level["map"][tile.y][tile.x] = [0, 0]
+            del self.level["map"][f"{tile.x}, {tile.y}"]
 
     def spawn(self):
         x, y = self.mouse
@@ -249,6 +252,9 @@ class Tile:
         dim = int(dim)
         surf = pygame.transform.scale(self.image, (dim,dim))
         self.canvas.blit(surf, (self.x*dim+x_offset, SCREENSIZE[1]-(MAX_Y-self.y)*dim+y_offset))
+        if self.layer == 1:
+            pygame.draw.rect(self.canvas, colors["white knight"], 
+                (self.x*dim+x_offset, SCREENSIZE[1]-(MAX_Y-self.y)*dim+y_offset, dim, dim), 2)
 
 
 if __name__ == "__main__":
