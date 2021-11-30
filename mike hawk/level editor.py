@@ -19,7 +19,10 @@ MAX_X, MAX_Y = 1024, 256 # flytta till config
 SETDIR = os.path.join(_base_dir, "assets", "tilesets")
 pygame.font.init()
 
-# level["map"] = {"0, 0": [], "2, 3": []}
+# add scroll in tile panel
+# add select mode
+# fix bugs
+# add slopes and entities and spawn and details
 
 def load_level(path):
     with open(path, "r") as file:
@@ -146,7 +149,8 @@ class Editor(Phase):
                 exec("self.{}()".format(self.mode))
 
         for tile in self.tiles:
-            tile.update(self.tile, self.x_offset, self.y_offset)
+            layer = self.layer if self.mode in ["place", "delete", "select"] else 2
+            tile.update(self.tile, self.x_offset, self.y_offset, layer)
         if self.func_keys["left control"] and self.listener.key_pressed("s"):
             self.save()
 
@@ -184,13 +188,15 @@ class Editor(Phase):
         index = 0
         if tile and (tile.layer != self.layer or tile.image == self.tileset[self.layer][index]):
             return
-        self.new_tile(x, y, self.panel.get_selected(), self.layer)
+        self.new_tile(x, y, self.panel.get_selected(self.layer), self.layer)
 
     def delete(self):
         tile = self.get_tile(*self.mouse)
         if tile and tile.layer == self.layer:
             self.tiles.remove(tile)
-            del self.level["map"]["{}, {}".format(tile.x, tile.y)]
+            pos = "{}, {}".format(tile.x, tile.y)
+            if pos in self.level["map"].keys():
+                del self.level["map"][pos]
 
     def spawn(self):
         x, y = self.mouse
@@ -258,7 +264,7 @@ class Tile:
         self.rect = self.image.get_rect()
         self.rect.topleft = (self.x, self.y)
 
-    def update(self, dim, x_offset, y_offset, panel=False):
+    def update(self, dim, x_offset, y_offset, layer=0, panel=False):
         dim = int(dim)
         surf = pygame.transform.scale(self.image, (dim,dim))
         self.rect = surf.get_rect()
@@ -268,7 +274,7 @@ class Tile:
             self.canvas.blit(surf, (self.x, self.y))
         else:    
             self.canvas.blit(surf, (self.x*dim+x_offset, SCREENSIZE[1]-(MAX_Y-self.y)*dim+y_offset))
-        if self.layer == 1:
+        if self.layer != layer and layer <= 1:
             pygame.draw.rect(self.canvas, colors["white knight"], 
                 (self.x*dim+x_offset, SCREENSIZE[1]-(MAX_Y-self.y)*dim+y_offset, dim, dim), 2)
 
@@ -297,32 +303,35 @@ class Panel:
         self.size = SCREENSIZE[1] // 20
         template = lambda i :set_tiles(self.surface, self.tileset[i], i, self.size, padding)
         self.tiles = [template(0), template(1)]
-        self.prev_layer = 0
-        self.layer = 0
         self.selected = self.tiles[0][0]
-        print(len(tileset[0]), len(tileset[1]))
+        self.preview_surf = pygame.Surface((width, width))
+        self.preview_tile = Tile(self.preview_surf, (10, 10), 0, self.tiles[0][0].image)
 
     def hover(self):
         mouse = pygame.mouse.get_pos()
         if self.rect.collidepoint(*mouse): return True
         return False
 
-    def get_selected(self):
-        return self.tiles[self.layer].index(self.selected)
+    def get_selected(self, layer):
+        return self.tiles[layer].index(self.selected)
 
     def update(self, layer):
-        self.surface.fill(colors["black"])
-        self.layer = layer
-        if self.prev_layer != layer:
-            self.prev_layer = layer
+        self.surface.fill(colors["black magic"])
+        if not self.selected in self.tiles[layer]:
             self.selected = self.tiles[layer][0]
         for tile in self.tiles[layer]:
-            tile.update(self.size, 0, 0, panel=True)
+            tile.update(self.size, 0, 0, layer, panel=True)
             x, y = pygame.mouse.get_pos()
             if tile.rect.collidepoint(x - self.rect.x, y - self.rect.y) and pygame.mouse.get_pressed()[0]:
                 self.selected = tile
         pygame.draw.rect(self.surface, colors["white knight"], self.selected.rect, 3)
+
+        self.preview_surf.fill(colors["black magic"])
+        self.preview_tile.image = self.selected.image
+        self.preview_tile.update(self.width-20, 0, 0, panel=True)
+
         self.canvas.blit(self.surface, self.rect.topleft)
+        self.canvas.blit(self.preview_surf, (self.rect.x, SCREENSIZE[1]-self.width))
 
 if __name__ == "__main__":
     app = App()
