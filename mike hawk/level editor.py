@@ -280,9 +280,10 @@ def set_tiles(surface, images, layer, size, padding):
     for y in range(len(images) // 3 + 1):
         for x in range(3):
             pos = (x*(size+padding) + padding, y*(size+padding) + padding)
-            lst.append(Tile(surface, pos, layer, images[i]))
-        i += 1
-    return lst[1:]
+            if i < len(images):
+                lst.append(Tile(surface, pos, layer, images[i]))
+            i += 1
+    return lst
 
 
 class Panel:
@@ -299,6 +300,7 @@ class Panel:
         self.prev_layer = 0
         self.layer = 0
         self.selected = self.tiles[0][0]
+        print(len(tileset[0]), len(tileset[1]))
 
     def hover(self):
         mouse = pygame.mouse.get_pos()
