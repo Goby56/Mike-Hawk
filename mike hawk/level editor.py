@@ -53,6 +53,7 @@ class Menu(Phase):
             level["details"] = []
             level["entities"] = []
             level["map"] = {}
+            level["triggers"] = []
             json.dump(level, file)
 
     def new_map(self):
@@ -94,9 +95,12 @@ class Editor(Phase):
         self.tile = 50
         self.tiles = []
 
+        self.triggers = []
+
         self.load_data()
 
         self.layer = 0
+
 
         #movement
         self.x_offset = 0
@@ -163,6 +167,12 @@ class Editor(Phase):
         for tile in self.tiles:
             layer = self.layer if self.mode in ["place", "delete", "select"] else 2
             tile.update(self.tile, self.x_offset, self.y_offset, layer)
+
+        for trigger in self.triggers:
+            trigger.render(self.canvas, self.tile, 
+                self.x_offset, self.y_offset
+            )
+
         if self.listener.key_pressed("left control", hold=True) and self.listener.key_pressed("s"):
             self.save()
 
@@ -174,7 +184,9 @@ class Editor(Phase):
             self.panel.update(self.layer)
             way = 0
             if self.listener.key_pressed("d"): way = 1
-            if self.listener.key_pressed("a"): way = -1
+            elif self.listener.key_pressed("a"): way = -1
+            elif self.listener.key_pressed("w"): way = -3
+            elif self.listener.key_pressed("s"): way = 3
             self.panel.next_tile(self.layer, way)
             
         if self.selection != None:
@@ -189,10 +201,18 @@ class Editor(Phase):
             x, y = tile.split(", ")
             layer = level["map"][tile]
             self.new_tile(int(x), int(y), layer[0], layer[1])
+        
+        for trigger in level["triggers"].copy():
+            self.new_trigger(trigger["pos"],
+                trigger["type"], trigger["command"]
+            )
 
     def new_tile(self, x, y, index, layer):
         image = self.tileset[layer][index]
         self.tiles.append(Tile(self.canvas, (x, y), layer, image, index))
+
+    def new_trigger(self, pos, type, command):
+        self.triggers.append(Trigger(pos, type, command))
 
     def get_movement(self):
         if self.listener.mouse_clicked(4): self.tile -= 1
@@ -308,6 +328,32 @@ class Tile:
         if self.layer != layer and layer <= 1:
             pygame.draw.rect(self.canvas, colors["white knight"], 
                 (self.x*dim+x_offset, SCREENSIZE[1]-(MAX_Y-self.y)*dim+y_offset, dim, dim), 2)
+
+
+class Trigger:
+    """
+    type
+    0: can be triggerd only once
+    1: can be triggerd mutible times but must exit zone
+    2: alwas triggerd if player inside
+    """
+    def __init__(self, pos, type, command):
+        self.x, self.y = pos
+        self.surface = pygame.Surface((1, 1)) # temp, make image
+        self.surface.fill(colors["blue"])
+
+        level["triggers"].append({
+            "pos": pos,
+            "type": type,
+            "command": command
+        })
+        
+    def render(self, canvas, dim, x_offset, y_offset):
+        dim = int(dim)
+        surf = pygame.transform.scale(self.surface, (dim, dim))
+        canvas.blit(surf, (self.x*dim+x_offset, SCREENSIZE[1]-(MAX_Y-self.y)*dim+y_offset, dim, dim))
+
+    
 
 
 class Selection:
