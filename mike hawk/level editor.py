@@ -137,6 +137,7 @@ class Editor(Phase):
     def update(self):
         for layer in self.paralax_layers:
             self.canvas.blit(layer, (0, 0))
+
         self.mode = self.modes[self.toolbar.get_selected()]
         self.layer = self.layer_panel.get_selected()
 
@@ -157,6 +158,7 @@ class Editor(Phase):
 
         if self.mode == "select": self.select()
         else: self.selection = None
+        if self.listener.key_pressed("m"): self.selection = None
 
         for tile in self.tiles:
             layer = self.layer if self.mode in ["place", "delete", "select"] else 2
@@ -170,6 +172,11 @@ class Editor(Phase):
 
         if self.mode == "place":
             self.panel.update(self.layer)
+            way = 0
+            if self.listener.key_pressed("d"): way = 1
+            if self.listener.key_pressed("a"): way = -1
+            self.panel.next_tile(self.layer, way)
+            
         if self.selection != None:
             self.selection.render(self.canvas, self.tile, self.x_offset, self.y_offset)
         
@@ -208,9 +215,6 @@ class Editor(Phase):
         tile = self.get_tile(*self.mouse)
         if tile and tile.layer == self.layer:
             self.tiles.remove(tile)
-            pos = "{}, {}".format(tile.x, tile.y)
-            if pos in level["map"].keys():
-                del level["map"][pos]
 
     def spawn(self):
         x, y = self.mouse
@@ -348,7 +352,6 @@ class Selection:
         for tile in self.tiles:
             tile.x += relx
             tile.y += rely
-            #tile.move(relx, rely)
         self.start_pos = (self.start_pos[0] + relx, self.start_pos[1] + rely)
         self.end_pos = (self.end_pos[0] + relx, self.end_pos[1] + rely)
 
@@ -387,6 +390,10 @@ class Panel:
 
     def get_selected(self, layer):
         return self.tiles[layer].index(self.selected)
+
+    def next_tile(self, layer, way):
+        i = (self.get_selected(layer) + way) % len(self.tiles[layer])
+        self.selected = self.tiles[layer][i]
 
     def update(self, layer):
         self.surface.fill(colors["black magic"])
