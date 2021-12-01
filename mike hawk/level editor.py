@@ -1,4 +1,4 @@
-import pygame, json, ctypes, os
+import pygame, json, ctypes, os, math
 
 import tkinter as tk
 from tkinter import filedialog as fd
@@ -52,7 +52,7 @@ class Menu(Phase):
             level["spawn"] = (0, MAX_Y)
             level["details"] = []
             level["entities"] = []
-            level["map"] = {} #[[(0, 0) for _ in range(MAX_X)] for _ in range(MAX_Y)]
+            level["map"] = {}
             json.dump(level, file)
 
     def new_map(self):
@@ -84,10 +84,11 @@ class Editor(Phase):
         self.listener = listener
         self.path = path
         with open(self.path, "r") as file:
-            self.level = json.load(file)
+            global level 
+            level = json.load(file)
         
         # tile things
-        tileset = load_set(SETDIR, self.level["tileset"])
+        tileset = load_set(SETDIR, level["tileset"])
         self.tileset = [list(tileset["fg"]), list(tileset["bg"])]
 
         self.tile = 50
@@ -117,11 +118,15 @@ class Editor(Phase):
         self.layer_panel.bind(("1", 0), ("2", 1))
 
         self.panel = Panel(self.canvas, SCREENSIZE[0] // 8, self.tileset)
-
-        self.func_keys = {"space": False, "left control": False}
         
         #backgtound
         self.paralax_layers = [pygame.transform.scale(layer, SCREENSIZE) for layer in paralax_layers]
+
+        #functions
+        self.func_keys = {"space": False}
+        self.hold = False
+        self.selection = None
+        self.other = False
 
     @property
     def mouse(self):
@@ -135,8 +140,10 @@ class Editor(Phase):
         self.mode = self.modes[self.toolbar.get_selected()]
         self.layer = self.layer_panel.get_selected()
 
-        if any(self.func_keys.values()) or any([self.toolbar.hover(), self.layer_panel.hover(), self.panel.hover()]): 
-            self.mode = "other"
+        if any(self.func_keys.values()) or any([self.toolbar.hover(), self.layer_panel.hover(), self.panel.hover() and self.mode == "place"]): 
+            self.other = True
+        else:
+            self.other = False
 
         for key in self.func_keys.keys():
             self.func_keys[key] = self.listener.key_pressed(key, hold=True)
@@ -145,33 +152,40 @@ class Editor(Phase):
         
         self.get_movement()
 
-        if self.listener.mouse_clicked(1, hold=True) and self.mode in self.modes:
+        if self.listener.mouse_clicked(1, hold=True) and self.mode in ["place", "delete", "spawn"] and not self.other:
                 exec("self.{}()".format(self.mode))
+
+        if self.mode == "select": self.select()
+        else: self.selection = None
 
         for tile in self.tiles:
             layer = self.layer if self.mode in ["place", "delete", "select"] else 2
             tile.update(self.tile, self.x_offset, self.y_offset, layer)
-        if self.func_keys["left control"] and self.listener.key_pressed("s"):
+        if self.listener.key_pressed("left control", hold=True) and self.listener.key_pressed("s"):
             self.save()
 
-
         self.draw_lines()
-        if self.mode == "place" or self.mode == "other":
-            self.panel.update(self.layer)
         self.toolbar.update()
         self.layer_panel.update()
+
+        if self.mode == "place":
+            self.panel.update(self.layer)
+        if self.selection != None:
+            self.selection.render(self.canvas, self.tile, self.x_offset, self.y_offset)
+        
         pygame.mouse.get_rel()
+        level["map"] = {"{}, {}".format(tile.x, tile.y): (tile.index, tile.layer) for tile in self.tiles}
+        
 
     def load_data(self):
-        for tile in self.level["map"]:
+        for tile in level["map"]:
             x, y = tile.split(", ")
-            layer = self.level["map"][tile]
+            layer = level["map"][tile]
             self.new_tile(int(x), int(y), layer[0], layer[1])
 
     def new_tile(self, x, y, index, layer):
         image = self.tileset[layer][index]
-        self.tiles.append(Tile(self.canvas, (x, y), layer, image))
-        self.level["map"]["{}, {}".format(x, y)] = [index, layer]
+        self.tiles.append(Tile(self.canvas, (x, y), layer, image, index))
 
     def get_movement(self):
         if self.listener.mouse_clicked(4): self.tile -= 1
@@ -195,13 +209,26 @@ class Editor(Phase):
         if tile and tile.layer == self.layer:
             self.tiles.remove(tile)
             pos = "{}, {}".format(tile.x, tile.y)
-            if pos in self.level["map"].keys():
-                del self.level["map"][pos]
+            if pos in level["map"].keys():
+                del level["map"][pos]
 
     def spawn(self):
         x, y = self.mouse
         print("spawn set at:", x, y)
-        self.level["spawn"] = [x, y]
+        level["spawn"] = [x, y]
+
+    def select(self):
+        if self.listener.mouse_clicked(1, hold=True):
+            if self.listener.key_pressed("left control", hold=True):
+                if self.hold == True and self.selection == None:
+                    self.selection = Selection(self.mouse, self.tile)
+                if self.selection != None:
+                    if self.hold == False: self.selection.new_selection(self.mouse)
+                    self.selection.get_endpos(self.mouse, self.tiles, self.layer)
+                self.hold = True
+            else: self.hold = False
+            if self.selection != None and self.hold == False and not self.other:
+                self.selection.move(self.mouse)
 
     def get_tile(self, x, y):
         for tile in self.tiles:
@@ -222,14 +249,13 @@ class Editor(Phase):
     def save(self):
         print("Saving...")
         with open(self.path, "w") as file:
-            json.dump(self.level, file)
+            json.dump(level, file, indent=4)
 
     def exit(self):
         if mb.askyesno("Save?", "Do you want to save?"):
             self.save()
         quit()
 
-    # add toolbar and tile selector
 
 class App:
     def __init__(self):
@@ -256,11 +282,12 @@ class App:
 
 
 class Tile:
-    def __init__(self, canvas, pos, layer, image):
+    def __init__(self, canvas, pos, layer, image, index):
         self.canvas = canvas
         self.x, self.y = pos
         self.image = image
         self.layer = layer
+        self.index = index
         self.rect = self.image.get_rect()
         self.rect.topleft = (self.x, self.y)
 
@@ -279,6 +306,52 @@ class Tile:
                 (self.x*dim+x_offset, SCREENSIZE[1]-(MAX_Y-self.y)*dim+y_offset, dim, dim), 2)
 
 
+class Selection:
+    def __init__(self, mouse, size):
+        self.start_pos = mouse
+        self.tiles = []
+
+        # visual, only for making selection box
+        self.rect = pygame.Rect((0, 0), (size, size))
+
+    def new_selection(self, pos):
+        self.start_pos = pos
+        self.tiles = []
+
+    def get_tiles(self, tiles, layer):
+        x1, y1 = self.start_pos
+        x2, y2 = self.end_pos
+        for tile in tiles:
+            if (tile.x >= x1 and tile.x <= x2
+            and tile.y >= y1 and tile.y <= y2
+            and tile not in self.tiles
+            and tile.layer == layer):
+                self.tiles.append(tile)
+
+    def get_endpos(self, mouse, tiles, layer):
+        self.end_pos = (mouse[0], mouse[1])
+        self.get_tiles(tiles, layer)
+       
+    def render(self, surface, size, x_offset, y_offset):
+        x1, y1 = self.start_pos
+        x2, y2 = self.end_pos
+        self.rect.x = x1*size+x_offset
+        self.rect.y = SCREENSIZE[1]-(MAX_Y-y1)*size+y_offset
+        self.rect.size = ((x2+1-x1)*size, (y2+1-y1)*size)
+
+        pygame.draw.rect(surface, colors["white knight"], self.rect, 3)
+
+    def move(self, mouse):
+        x, y = self.start_pos
+        relx = mouse[0] - x
+        rely = mouse[1] - y
+        for tile in self.tiles:
+            tile.x += relx
+            tile.y += rely
+            #tile.move(relx, rely)
+        self.start_pos = (self.start_pos[0] + relx, self.start_pos[1] + rely)
+        self.end_pos = (self.end_pos[0] + relx, self.end_pos[1] + rely)
+
 
 def set_tiles(surface, images, layer, size, padding):
     lst = []
@@ -287,7 +360,7 @@ def set_tiles(surface, images, layer, size, padding):
         for x in range(3):
             pos = (x*(size+padding) + padding, y*(size+padding) + padding)
             if i < len(images):
-                lst.append(Tile(surface, pos, layer, images[i]))
+                lst.append(Tile(surface, pos, layer, images[i], i))
             i += 1
     return lst
 
@@ -305,7 +378,7 @@ class Panel:
         self.tiles = [template(0), template(1)]
         self.selected = self.tiles[0][0]
         self.preview_surf = pygame.Surface((width, width))
-        self.preview_tile = Tile(self.preview_surf, (10, 10), 0, self.tiles[0][0].image)
+        self.preview_tile = Tile(self.preview_surf, (10, 10), 0, self.tiles[0][0].image, 0)
 
     def hover(self):
         mouse = pygame.mouse.get_pos()
