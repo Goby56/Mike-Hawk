@@ -90,6 +90,7 @@ class Camera:
 
         self.offset = pygame.Vector2(0,0)
         self.total_offset = pygame.Vector2(0,0)
+        self.current_bound = pygame.Vector2(700, 0)
         # Offset for follow method
         self.method = "follow"
     
@@ -113,8 +114,14 @@ class Camera:
 
     def border(self):
         if self.abs_x < 0:
-            self.offset.x = 0
+            self.offset.x += abs(self.abs_x)
             self.total_offset.x = 0
+
+        if self.abs_x > self.current_bound.x:
+            self.offset.x -= self.abs_x - self.current_bound.x
+            self.total_offset.x = self.current_bound.x
+
+        print(self.abs_x, self.offset.x)
 
         if self.abs_y < 0:
             self.offset.y = 0
