@@ -3,6 +3,7 @@ import pygame, json, ctypes, os, math
 import tkinter as tk
 from tkinter import filedialog as fd
 from tkinter import messagebox as mb
+from tkinter import simpledialog as sd
 
 from res.tileset import load_set
 from res.widgets import MenuButtonPanel, Toolbar
@@ -20,8 +21,8 @@ SETDIR = os.path.join(_base_dir, "assets", "tilesets")
 pygame.font.init()
 
 # add scroll in tile panel
-# add select mode
 # fix bugs
+# new trigger system. trigger register: name: type, command. triggers: {pos: pos, name: name}
 # add slopes and entities and spawn and details
 
 def load_level(path):
@@ -101,7 +102,6 @@ class Editor(Phase):
 
         self.layer = 0
 
-
         #movement
         self.x_offset = 0
         self.y_offset = 0
@@ -157,7 +157,7 @@ class Editor(Phase):
         
         self.get_movement()
 
-        if self.listener.mouse_clicked(1, hold=True) and self.mode in ["place", "delete", "spawn"] and not self.other:
+        if self.listener.mouse_clicked(1, hold=True) and self.mode in ["place", "delete", "spawn", "entity"] and not self.other:
                 exec("self.{}()".format(self.mode))
 
         if self.mode == "select": self.select()
@@ -193,8 +193,11 @@ class Editor(Phase):
             self.selection.render(self.canvas, self.tile, self.x_offset, self.y_offset)
         
         pygame.mouse.get_rel()
-        level["map"] = {"{}, {}".format(tile.x, tile.y): (tile.index, tile.layer) for tile in self.tiles}
+        self.update_level()
         
+    def update_level(self):
+        level["map"] = {"{}, {}".format(tile.x, tile.y): (tile.index, tile.layer) for tile in self.tiles}
+        level["triggers"] = [trigger.dict for trigger in self.triggers]
 
     def load_data(self):
         for tile in level["map"]:
@@ -204,15 +207,15 @@ class Editor(Phase):
         
         for trigger in level["triggers"].copy():
             self.new_trigger(trigger["pos"],
-                trigger["type"], trigger["command"]
+                trigger["command"], trigger["type"]
             )
 
     def new_tile(self, x, y, index, layer):
         image = self.tileset[layer][index]
         self.tiles.append(Tile(self.canvas, (x, y), layer, image, index))
 
-    def new_trigger(self, pos, type, command):
-        self.triggers.append(Trigger(pos, type, command))
+    def new_trigger(self, pos, command, type):
+        self.triggers.append(Trigger(pos, command, type))
 
     def get_movement(self):
         if self.listener.mouse_clicked(4): self.tile -= 1
@@ -240,6 +243,10 @@ class Editor(Phase):
         x, y = self.mouse
         print("spawn set at:", x, y)
         level["spawn"] = [x, y]
+
+    def entity(self):
+        td = TriggerConfig()
+        print(td.result)
 
     def select(self):
         if self.listener.mouse_clicked(1, hold=True):
@@ -337,23 +344,22 @@ class Trigger:
     1: can be triggerd mutible times but must exit zone
     2: alwas triggerd if player inside
     """
-    def __init__(self, pos, type, command):
+    def __init__(self, pos, command, type):
         self.x, self.y = pos
         self.surface = pygame.Surface((1, 1)) # temp, make image
         self.surface.fill(colors["blue"])
+        self.surface.set_alpha(100)
 
-        level["triggers"].append({
+        self.dict = {
             "pos": pos,
-            "type": type,
-            "command": command
-        })
+            "command": command,
+            "type": type
+        }
         
     def render(self, canvas, dim, x_offset, y_offset):
         dim = int(dim)
         surf = pygame.transform.scale(self.surface, (dim, dim))
         canvas.blit(surf, (self.x*dim+x_offset, SCREENSIZE[1]-(MAX_Y-self.y)*dim+y_offset, dim, dim))
-
-    
 
 
 class Selection:
@@ -458,6 +464,27 @@ class Panel:
 
         self.canvas.blit(self.surface, self.rect.topleft)
         self.canvas.blit(self.preview_surf, (self.rect.x, SCREENSIZE[1]-self.width))
+
+
+class TriggerConfig(sd.Dialog):
+    def __init__(self):
+        super().__init__(None, "New Trigger")
+
+    def body(self, master): # function in sd.Dialog to override
+        self.objects = ["name", "command", "type"]
+        for i, text in enumerate(self.objects):
+            tk.Label(master, text = text.capitalize() + " :").grid(row=i, column=0)
+            if i < len(self.objects) - 1:
+                vars(self)[text] = tk.Entry(master)
+                vars(self)[text].grid(row = i, column=1)
+        self.type = tk.Spinbox(master, from_ = 0, to = 2)
+        self.type.grid(row = i, column=1)
+
+        return self.name # initial focus
+
+    def apply(self): # function in sd.Dialog to override
+        self.result = [vars(self)[text].get() for text in self.objects]
+    
 
 if __name__ == "__main__":
     app = App()
