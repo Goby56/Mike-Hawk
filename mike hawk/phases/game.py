@@ -1,4 +1,4 @@
-import pygame, sys
+import pygame, sys, copy
 sys.path.append("..")
 
 from .phase import Phase
@@ -121,8 +121,6 @@ class Camera:
             self.offset.x -= self.abs_x - self.current_bound.x
             self.total_offset.x = self.current_bound.x
 
-        print(self.abs_x, self.offset.x)
-
         if self.abs_y < 0:
             self.offset.y = 0
             self.total_offset.y = 0
@@ -157,12 +155,12 @@ class Player(pygame.sprite.Sprite):
         self.collisions = {"right":False, "left":False, "top":False, "bottom":False}
         self.state = {"idle":False, "walking":False, "jumping":False, "running":False, "falling":False, "charging":False}
         self.previous_state = None
+        self.state_history = []
         self.facing = {"left":False, "right":True}
         self.enable_jump = False
-        self.enable_jump_boost = False
         
         # Timers
-        self.idle_timer = Timer("down", "ticks", 1)
+        self.idle_timer = Timer("down", "ticks", 2)
         self.jump_hold_timer = Timer("down", "ticks", 15)
 
         self.acceleration = pygame.Vector2(0, game_vars["gravity"])
@@ -186,8 +184,7 @@ class Player(pygame.sprite.Sprite):
 
     def check_state(self, debug=False):
         if not debug:
-            # if self.previous_state != self.state:
-            #     self.previous_state = self.state
+            self.previous_state = self.state.copy()
 
             if self.velocity.x != 0 and self.collisions["bottom"]:
                 if self.listener.key_pressed("left shift", hold=True):
@@ -202,15 +199,23 @@ class Player(pygame.sprite.Sprite):
             elif self.velocity.y > game_vars["gravity"]:
                 self.set_state("falling")
 
+            if self.find_true(self.state) != self.find_true(self.previous_state):
+                for key, value in self.state.items():
+                    if value == True:
+                        self.state_history.append(key)
+                if len(self.state_history) > 4:
+                    self.state_history.pop(0)
+
         if debug:
-            for key, value in self.state.items():
-                if value:
-                    print(key)
+            state = self.find_true(self.state)
+            if state != None:
+                print(state, " : ", self.state_history)
 
 
     def update(self, dt, collisions_objects, scroll):
 
         self.check_idle()
+        self.check_state(True)
 
         self.horizontal_movement(dt)
         self.handle_collisions(self.get_collisions(collisions_objects), axis=0)
@@ -236,6 +241,7 @@ class Player(pygame.sprite.Sprite):
 
     def horizontal_movement(self, dt):
         dt *= 60
+        dt = 1
         self.check_state()
 
         key_a = self.listener.key_pressed("a", hold=True)
@@ -247,10 +253,15 @@ class Player(pygame.sprite.Sprite):
             self.facing["left"], self.facing["right"] = True, False
 
         #if self.previous_state["running"] and self.state["jumping"]:
-            """# Fix previous state so the determination of wheter or not
+            """
+            Note to self
+            # Fix previous state so the determination of wheter or not
             # toggle sprint is on. (max vel should only increase if
             # running before jumping)
-            # previous state cant be None? """
+            # previous state cant be None? 
+            # Friction in air should be less than on ground but the amount
+            # you can move the character way less.
+            # """
             #pass
 
 
@@ -275,13 +286,12 @@ class Player(pygame.sprite.Sprite):
 
     def vertical_movement(self, dt):
         dt *= 60
-
+        dt = 1
         self.check_state()
         if self.listener.key_pressed("space", hold=True):
             if self.collisions["bottom"] == True and self.enable_jump:
                 self.velocity.y = -game_vars["jump strength"]
                 self.enable_jump = False
-                self.enable_jump_boost = True
                 self.jump_hold_timer.start()
 
             elif self.jump_hold_timer.finished():
@@ -291,7 +301,6 @@ class Player(pygame.sprite.Sprite):
                 self.velocity.y = -game_vars["jump strength"]
 
         elif self.listener.key_up("space"):
-            self.enable_jump_boost = False
             self.jump_hold_timer.reset()
 
         self.collisions["bottom"] = False
@@ -315,6 +324,12 @@ class Player(pygame.sprite.Sprite):
         if self.idle_timer.finished():
             self.set_state("idle")
             self.idle_timer.reset()
+            try:
+                if self.state_history[-1] != "idle":
+                    self.state_history.append("idle")
+            except IndexError:
+                pass
+
     
     def handle_collisions(self, tile_collisions, axis):
         if tile_collisions:
@@ -343,6 +358,12 @@ class Player(pygame.sprite.Sprite):
     def get_collisions(self, group):
         collisions = pygame.sprite.spritecollide(self, group, False)
         return collisions
+
+    def find_true(self, dictionary):
+        for key, value in dictionary.items():
+            if value == True:
+                return key
+
 
 
 class Paralax:
