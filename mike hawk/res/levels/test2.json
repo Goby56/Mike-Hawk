@@ -2,18 +2,95 @@
     "details": [],
     "triggers": [
         {
-            "name": "killer",
             "pos": [
-                3,
-                254
-            ]
+                10,
+                255
+            ],
+            "name": "killer"
         },
         {
-            "name": "checkpoint",
             "pos": [
-                4,
-                245
-            ]
+                9,
+                255
+            ],
+            "name": "killer"
+        },
+        {
+            "pos": [
+                19,
+                255
+            ],
+            "name": "killer"
+        },
+        {
+            "pos": [
+                20,
+                255
+            ],
+            "name": "killer"
+        },
+        {
+            "pos": [
+                21,
+                255
+            ],
+            "name": "killer"
+        },
+        {
+            "pos": [
+                22,
+                255
+            ],
+            "name": "killer"
+        },
+        {
+            "pos": [
+                23,
+                255
+            ],
+            "name": "killer"
+        },
+        {
+            "pos": [
+                24,
+                255
+            ],
+            "name": "killer"
+        },
+        {
+            "pos": [
+                15,
+                252
+            ],
+            "name": "checkpoint"
+        },
+        {
+            "pos": [
+                15,
+                251
+            ],
+            "name": "checkpoint"
+        },
+        {
+            "pos": [
+                15,
+                250
+            ],
+            "name": "checkpoint"
+        },
+        {
+            "pos": [
+                15,
+                249
+            ],
+            "name": "checkpoint"
+        },
+        {
+            "pos": [
+                15,
+                248
+            ],
+            "name": "checkpoint"
         }
     ],
     "map": {
@@ -993,8 +1070,8 @@
         ]
     },
     "spawn": [
-        0,
-        256
+        3,
+        252
     ],
     "tileset": "dev_tileset",
     "entities": []
