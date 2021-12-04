@@ -70,3 +70,6 @@ tile_frames_bg = load_frames("dev_tiles_bg")
 paralax_layers = load_frames("desertdemo")
 player_animations = load_frames("player_walk")
 editor_buttons = load_frames("editor_buttons")
+spawn_image = pygame.image.load(
+        os.path.join(_base_dir, "assets", "editor", "spawn_point.png")
+)
