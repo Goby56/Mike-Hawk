@@ -15,8 +15,8 @@ from listener import Listener
 
 
 SCREENSIZE = [ctypes.windll.user32.GetSystemMetrics(0), ctypes.windll.user32.GetSystemMetrics(1)]
-SCREENSIZE[0] //= 1
-SCREENSIZE[1] //= 1
+SCREENSIZE[0] //= 2
+SCREENSIZE[1] //= 2
 
 MAX_X, MAX_Y = 1024, 256 # flytta till config
 SETDIR = os.path.join(_base_dir, "assets", "tilesets")
