@@ -156,20 +156,19 @@ class Player(pygame.sprite.Sprite):
         # Tags
         self.collisions = {"right":False, "left":False, "top":False, "bottom":False}
         self.state = {"idle":False, "walking":False, "jumping":False, "running":False, "falling":False, "charging":False}
+        self.previous_state = None
         self.facing = {"left":False, "right":True}
         self.enable_jump = False
         self.enable_jump_boost = False
         
         # Timers
         self.idle_timer = Timer("down", "ticks", 1)
-        self.jump_hold_timer = Timer("down", "ticks", 10)
-        self.jump_boost_distribution_timer = Timer("up", "ticks", 10)
+        self.jump_hold_timer = Timer("down", "ticks", 15)
 
         self.acceleration = pygame.Vector2(0, game_vars["gravity"])
         self.velocity = pygame.Vector2(0, 0)
         self.scroll_offset = pygame.Vector2(0, 0)
         self.animator = Animator(self.frames, 0.2)
-        self.durations = {"space":0}
 
     @property
     def abs_x(self):
@@ -187,6 +186,9 @@ class Player(pygame.sprite.Sprite):
 
     def check_state(self, debug=False):
         if not debug:
+            # if self.previous_state != self.state:
+            #     self.previous_state = self.state
+
             if self.velocity.x != 0 and self.collisions["bottom"]:
                 if self.listener.key_pressed("left shift", hold=True):
                     self.set_state("running")
@@ -244,15 +246,28 @@ class Player(pygame.sprite.Sprite):
         if direction == -1:
             self.facing["left"], self.facing["right"] = True, False
 
+        #if self.previous_state["running"] and self.state["jumping"]:
+            """# Fix previous state so the determination of wheter or not
+            # toggle sprint is on. (max vel should only increase if
+            # running before jumping)
+            # previous state cant be None? """
+            #pass
+
+
         if any([self.state["running"], self.state["jumping"], self.state["falling"]]):
-            velocity_multiplier = game_vars["sprint_multiplier"]**self.state["running"]
+            toggle_sprint = game_vars["sprint_multiplier"]**self.state["running"]
             velocity_cap_multiplier = game_vars["sprint_multiplier"]
         else:
-            velocity_multiplier = 1
+            toggle_sprint = 1
             velocity_cap_multiplier = 1
-            
-        self.acceleration.x = game_vars["speed"]*direction*velocity_multiplier
-        self.velocity.x += dt*(self.acceleration.x + self.velocity.x*game_vars["friction"])
+        
+        if self.collisions["bottom"]:
+            friction = game_vars["ground_friction"]
+        else:
+            friction = game_vars["air_resistance"]
+
+        self.acceleration.x = game_vars["speed"]*direction*toggle_sprint
+        self.velocity.x += dt*(self.acceleration.x + self.velocity.x*friction)
         self.limit_velocity(game_vars["max_vel"]*velocity_cap_multiplier)
         self.pos.x += int(self.velocity.x*dt + 0.5*(self.acceleration.x * dt**2))
 
@@ -260,35 +275,24 @@ class Player(pygame.sprite.Sprite):
 
     def vertical_movement(self, dt):
         dt *= 60
-        
-        # Fix so that you dont jump when pressing a or d while charging
-        # Have it so that you look left or right instead
-        # Otherwise execute charged jump when pressing a or d
 
         self.check_state()
-
         if self.listener.key_pressed("space", hold=True):
             if self.collisions["bottom"] == True and self.enable_jump:
                 self.velocity.y = -game_vars["jump strength"]
                 self.enable_jump = False
                 self.enable_jump_boost = True
                 self.jump_hold_timer.start()
-            
+
             elif self.jump_hold_timer.finished():
-                self.jump_boost_distribution_timer.start()
                 self.jump_hold_timer.reset()
 
-            elif self.enable_jump_boost and self.jump_boost_distribution_timer.running:
-                distribution = 1/self.jump_boost_distribution_timer.requirement
-                amplifier = game_vars["jump_amplifier"]*distribution
-                self.velocity.y += -game_vars["jump strength"]*(amplifier-1)
-                print(amplifier)
+            elif self.jump_hold_timer.running:
+                self.velocity.y = -game_vars["jump strength"]
 
         elif self.listener.key_up("space"):
             self.enable_jump_boost = False
             self.jump_hold_timer.reset()
-            self.jump_boost_distribution_timer.reset()
-    
 
         self.collisions["bottom"] = False
 
