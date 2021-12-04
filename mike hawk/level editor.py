@@ -5,6 +5,8 @@ from tkinter import filedialog as fd
 from tkinter import messagebox as mb
 from tkinter import simpledialog as sd
 
+from pygame.constants import FULLSCREEN
+
 from res.tileset import load_set
 from res.widgets import MenuButtonPanel, Toolbar, MenuButton
 from phases.phase import Phase
@@ -13,8 +15,8 @@ from listener import Listener
 
 
 SCREENSIZE = [ctypes.windll.user32.GetSystemMetrics(0), ctypes.windll.user32.GetSystemMetrics(1)]
-SCREENSIZE[0] //= 2
-SCREENSIZE[1] //= 2
+SCREENSIZE[0] //= 1
+SCREENSIZE[1] //= 1
 
 MAX_X, MAX_Y = 1024, 256 # flytta till config
 SETDIR = os.path.join(_base_dir, "assets", "tilesets")
@@ -49,11 +51,12 @@ class Menu(Phase):
         with open(path, "w") as file:
             level = {}
             level["tileset"] = tileset.split(".")[0]
-            level["spawn"] = (0, MAX_Y)
+            level["spawn"] = (0, MAX_Y-1)
             level["details"] = []
             level["entities"] = []
             level["map"] = {}
             level["triggers"] = []
+            level["register"] = {}
             json.dump(level, file)
 
     def new_map(self):
@@ -249,8 +252,8 @@ class Editor(Phase):
         return False
 
     def get_movement(self):
-        if self.listener.mouse_clicked(4): self.tile -= 1
-        if self.listener.mouse_clicked(5): self.tile += 1
+        if self.listener.mouse_clicked(4): self.tile += 1
+        if self.listener.mouse_clicked(5) and self.tile > 1: self.tile -= 1
 
         if self.func_keys["space"] and self.listener.mouse_clicked(1, hold=True):
             rel = pygame.mouse.get_rel()
