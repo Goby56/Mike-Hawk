@@ -6,7 +6,7 @@ from tkinter import messagebox as mb
 from tkinter import simpledialog as sd
 
 from res.tileset import load_set
-from res.widgets import MenuButtonPanel, Toolbar
+from res.widgets import MenuButtonPanel, Toolbar, MenuButton
 from phases.phase import Phase
 from res.config import colors, _base_dir, paralax_layers, editor_buttons
 from listener import Listener
@@ -206,16 +206,26 @@ class Editor(Phase):
             self.new_tile(int(x), int(y), layer[0], layer[1])
         
         for trigger in level["triggers"].copy():
-            self.new_trigger(trigger["pos"],
-                trigger["command"], trigger["type"]
-            )
+            self.new_trigger(trigger["pos"], trigger["name"])
 
     def new_tile(self, x, y, index, layer):
         image = self.tileset[layer][index]
         self.tiles.append(Tile(self.canvas, (x, y), layer, image, index))
 
-    def new_trigger(self, pos, command, type):
-        self.triggers.append(Trigger(pos, command, type))
+    def get_tile(self, x, y):
+        for tile in self.tiles:
+            if (tile.x, tile.y) == (x, y):
+                return tile
+        return False
+
+    def new_trigger(self, pos, name):
+        self.triggers.append(Trigger(pos, name))
+
+    def add_trigger(self, name, command, type):
+        level["register"][name] = [command, type]
+
+    def remove_trigger(self, name):
+        del level["register"][name]
 
     def get_movement(self):
         if self.listener.mouse_clicked(4): self.tile -= 1
@@ -245,8 +255,7 @@ class Editor(Phase):
         level["spawn"] = [x, y]
 
     def entity(self):
-        td = TriggerConfig()
-        print(td.result)
+        pass
 
     def select(self):
         if self.listener.mouse_clicked(1, hold=True):
@@ -261,11 +270,6 @@ class Editor(Phase):
             if self.selection != None and self.hold == False and not self.other:
                 self.selection.move(self.mouse)
 
-    def get_tile(self, x, y):
-        for tile in self.tiles:
-            if (tile.x, tile.y) == (x, y):
-                return tile
-        return False
 
     def draw_lines(self):
         for x in range(int(SCREENSIZE[0]//self.tile) + 1):
@@ -344,7 +348,7 @@ class Trigger:
     1: can be triggerd mutible times but must exit zone
     2: alwas triggerd if player inside
     """
-    def __init__(self, pos, command, type):
+    def __init__(self, pos, name):
         self.x, self.y = pos
         self.surface = pygame.Surface((1, 1)) # temp, make image
         self.surface.fill(colors["blue"])
@@ -352,8 +356,7 @@ class Trigger:
 
         self.dict = {
             "pos": pos,
-            "command": command,
-            "type": type
+            "name": name
         }
         
     def render(self, canvas, dim, x_offset, y_offset):
@@ -464,6 +467,64 @@ class Panel:
 
         self.canvas.blit(self.surface, self.rect.topleft)
         self.canvas.blit(self.preview_surf, (self.rect.x, SCREENSIZE[1]-self.width))
+
+
+class Listbox:
+    def __init__(self, canvas, listener, width, items):
+        self.canvas = canvas
+        self.width = width
+        self.items = ["spawn_point"] + items # Listbox items
+        self.listener = listener
+
+        self.padding = 5
+        self.selected = "spawn_point"
+
+        self.surface = pygame.Surface((width, SCREENSIZE[1]))
+        self.surface.fill(colors["black magic"])
+        self.rect = self.surface.get_rect(topleft = (SCREENSIZE[0]-self.width, 0))
+
+        self.add_button = MenuButton(self.surface, self.listener, (self.padding, SCREENSIZE[1]-50), 
+            "Add Trigger", self.add_trigger
+        )
+        self.add_button.rect.top = SCREENSIZE[1] - self.rect.height - self.padding
+        self.remove_button = MenuButton(self.surface, self.listener, (self.padding*2 + self.add_button.rect.width, 
+            SCREENSIZE[1]-50), "Add Trigger", self.remove_trigger
+        )
+
+    def add_trigger(self):
+        trigger = TriggerConfig()
+        if trigger != None:
+            name, command, type = trigger.result
+            level["register"][name] = [command, type]
+            self.items.append(name)
+
+    def remove_trigger(self):
+        if self.selected != "spawn_point":
+            del level["register"][self.selected]
+            self.items.remove(self.selected)
+
+
+class ListboxItem:
+    def __init__(self, canvas, pos, width, name):
+        self.canvas = canvas
+        self.pos = pos
+        self.width = width
+        self.name = name
+
+        self.selected = False
+
+        padding = 3
+        font = pygame.font.SysFont("Ariel", 20)
+        font_surf = font.render(self.name, False, colors["black magic"])
+        self.surface = pygame.Surface((width, font_surf.get_height() + 2*padding))
+        self.surface.fill(colors["white knight"])
+        self.surface.blit(font_surf, self.pos)
+
+    def clicked(self):
+        pass # if clicked return True
+
+    def update(self):
+        pass
 
 
 class TriggerConfig(sd.Dialog):
