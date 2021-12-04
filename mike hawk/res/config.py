@@ -4,6 +4,7 @@ GRAVITY = 9.82
 BASE_FRICTION = 0.31
 PLAYER_SPEED = 10
 TERMINAL_VELOCITY = 100
+MAX_Y = 256
 
 import ctypes
 SCREENSIZE = ctypes.windll.user32.GetSystemMetrics(0), ctypes.windll.user32.GetSystemMetrics(1)
