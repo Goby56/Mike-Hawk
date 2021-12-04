@@ -27,7 +27,7 @@ class Game(Phase):
         self.map = self.level["map"]
 
         tileset = list(load_set(sprite_dir, self.level["tileset"]).values())
-        self.place_tiles(tileset)
+        self.load_tiles(tileset)
         self.paralax = Paralax(canvas, paralax_layers)
 
         player_dim = (int(self.tile_size*1.5), int(self.tile_size*3))
@@ -37,7 +37,8 @@ class Game(Phase):
         self.camera = Camera(self, canvas)
         self.scroll = pygame.Vector2(0, 0)
 
-    def place_tiles(self, tileset):
+    def load_tiles(self, tileset):
+        x_list = []
         for pos, tile_data in self.map.items():
             index, layer = tile_data
             tile = Tile([int(i) for i in pos.split(", ")], self.tile_size, tileset[layer][index])
@@ -45,6 +46,8 @@ class Game(Phase):
                 self.tiles.add(tile)
             elif layer == 1:
                 self.other_tiles.add(tile)
+            x_list.append(int(pos.split(", ")[0]))
+        self.max_x = max(x_list)
 
     def update(self, dt, *args, **kwargs):
         self.scroll = self.camera.get_offset()
@@ -87,7 +90,7 @@ class Camera:
 
         self.offset = pygame.Vector2(0,0)
         self.total_offset = pygame.Vector2(0,0)
-        self.current_bound = pygame.Vector2(50*game_vars["tile_size"]-self.CANVAS_W, MAX_Y*game_vars["tile_size"]-self.CANVAS_H)
+        self.current_bound = pygame.Vector2(self.game.max_x*game_vars["tile_size"]-self.CANVAS_W, MAX_Y*game_vars["tile_size"]-self.CANVAS_H)
         # Offset for follow method
         self.method = "follow"
     
