@@ -1,9 +1,12 @@
+from typing import List
 import pygame, json, ctypes, os, math
 
 import tkinter as tk
 from tkinter import filedialog as fd
 from tkinter import messagebox as mb
 from tkinter import simpledialog as sd
+
+from pygame.display import get_active
 
 from res.tileset import load_set
 from res.widgets import MenuButtonPanel, Toolbar, MenuButton
@@ -122,6 +125,7 @@ class Editor(Phase):
         self.layer_panel.bind(("1", 0), ("2", 1))
 
         self.panel = Panel(self.canvas, SCREENSIZE[0] // 8, self.tileset)
+        self.listbox = Listbox(self.canvas, self.listener, SCREENSIZE[0] // 8, [])
         
         #backgtound
         self.paralax_layers = [pygame.transform.scale(layer, SCREENSIZE) for layer in paralax_layers]
@@ -188,6 +192,8 @@ class Editor(Phase):
             elif self.listener.key_pressed("w"): way = -3
             elif self.listener.key_pressed("s"): way = 3
             self.panel.next_tile(self.layer, way)
+        elif self.mode == "entity":
+            self.listbox.update()
             
         if self.selection != None:
             self.selection.render(self.canvas, self.tile, self.x_offset, self.y_offset)
@@ -483,13 +489,16 @@ class Listbox:
         self.surface.fill(colors["black magic"])
         self.rect = self.surface.get_rect(topleft = (SCREENSIZE[0]-self.width, 0))
 
-        self.add_button = MenuButton(self.surface, self.listener, (self.padding, SCREENSIZE[1]-50), 
+        self.add_button = MenuButton(self.canvas, self.listener, (self.rect.x + self.padding, SCREENSIZE[1]-100), 
             "Add Trigger", self.add_trigger
         )
-        self.add_button.rect.top = SCREENSIZE[1] - self.rect.height - self.padding
-        self.remove_button = MenuButton(self.surface, self.listener, (self.padding*2 + self.add_button.rect.width, 
-            SCREENSIZE[1]-50), "Add Trigger", self.remove_trigger
+        self.add_button.rect.top = SCREENSIZE[1] - 2*self.add_button.rect.height - 2*self.padding
+        self.remove_button = MenuButton(self.canvas, self.listener, (self.padding + self.rect.x, 
+        SCREENSIZE[1]-self.add_button.rect.height-self.padding), "Remove Trigger", self.remove_trigger
         )
+        self.new_listbox = lambda i, name: ListboxItem(self.surface, self.listener, (self.padding, 
+            self.padding+25*i), self.width-2*self.padding, name)
+        self.boxitems = [self.new_listbox(i, name) for i, name in enumerate(self.items)]
 
     def add_trigger(self):
         trigger = TriggerConfig()
@@ -497,34 +506,67 @@ class Listbox:
             name, command, type = trigger.result
             level["register"][name] = [command, type]
             self.items.append(name)
+            self.boxitems.append(self.new_listbox(len(self.items)-1, name))
 
     def remove_trigger(self):
         if self.selected != "spawn_point":
             del level["register"][self.selected]
             self.items.remove(self.selected)
+            boxitem = self.get_boxitem(self.selected)
+            if boxitem: self.boxitems.remove(boxitem)
 
+    def get_boxitem(self, name):
+        for item in self.boxitems:
+            if item.name == name: return item
+        return False
+
+    def deselect_item(self):
+        for item in self.boxitems:
+            item.selected = False
+
+    def update(self):
+        x, y = pygame.mouse.get_pos()
+        for item in self.boxitems:
+            item.update()
+            if item.clicked((x-self.rect.x+self.padding, y)):
+                self.deselect_item()
+                item.selected = True
+                self.selected = item.name
+            
+        self.canvas.blit(self.surface, self.rect.topleft)
+        self.add_button.update()
+        self.remove_button.update()
 
 class ListboxItem:
-    def __init__(self, canvas, pos, width, name):
+    def __init__(self, canvas, listener, pos, width, name):
         self.canvas = canvas
+        self.listener = listener
         self.pos = pos
         self.width = width
         self.name = name
 
-        self.selected = False
+        self.selected = False # set in listbox class
 
-        padding = 3
+        self.padding = 3
         font = pygame.font.SysFont("Ariel", 20)
-        font_surf = font.render(self.name, False, colors["black magic"])
-        self.surface = pygame.Surface((width, font_surf.get_height() + 2*padding))
-        self.surface.fill(colors["white knight"])
-        self.surface.blit(font_surf, self.pos)
+        self.font_surf = font.render(self.name, False, colors["black magic"])
+        self.surface = pygame.Surface((width, self.font_surf.get_height() + 2*self.padding))
 
-    def clicked(self):
-        pass # if clicked return True
+        self.rect = self.surface.get_rect(topleft = self.pos)
+
+    def clicked(self, mouse):
+        if self.rect.collidepoint(mouse):
+            if self.listener.mouse_clicked(1):
+                return True
+        return False
 
     def update(self):
-        pass
+        color = colors["cool blue"] if self.selected else colors["white knight"]
+        self.surface.fill(color)
+        self.surface.blit(self.font_surf, (self.padding, self.padding))
+        self.canvas.blit(self.surface, self.pos)
+
+        self.rect.topleft = self.pos
 
 
 class TriggerConfig(sd.Dialog):
