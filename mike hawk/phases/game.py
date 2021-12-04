@@ -7,7 +7,7 @@ from res.animator import Animator
 from res.timers import Timer
 
 import json, os
-from res.config import _base_dir, sprite_dir, game_vars, paralax_layers, player_animations
+from res.config import _base_dir, sprite_dir, game_vars, paralax_layers, player_animations, MAX_Y
 from res.tileset import load_set
 
 
@@ -26,28 +26,25 @@ class Game(Phase):
             self.level = json.load(f)
         self.map = self.level["map"]
 
-        tileset = load_set(sprite_dir, self.level["tile set"])
+        tileset = list(load_set(sprite_dir, self.level["tileset"]).values())
         self.place_tiles(tileset)
         self.paralax = Paralax(canvas, paralax_layers)
 
-        world_height = self.get_world_dimensions()[1]
         player_dim = (int(self.tile_size*1.5), int(self.tile_size*3))
-        spawn = (self.level["spawn"][0]*self.tile_size - player_dim[0]//2, 
-            world_height - self.level["spawn"][1]*self.tile_size - player_dim[1])
-        self.player = Player(listener, canvas, spawn, player_dim)
+        spawn_x, spawn_y = self.level["spawn"]
+        self.player = Player(listener, canvas, (spawn_x*self.tile_size, spawn_y*self.tile_size), player_dim)
         
         self.camera = Camera(self, canvas)
         self.scroll = pygame.Vector2(0, 0)
 
     def place_tiles(self, tileset):
-        for r, row in enumerate(self.map):
-            for c, tile in enumerate(row):
-                if tile[0]:
-                    new_tile = Tile((c,r), self.tile_size, tileset[tile[1]][tile[0]-1])
-                    if tile[1] == "fg":
-                        self.tiles.add(new_tile)
-                    else:
-                        self.other_tiles.add(new_tile)
+        for pos, tile_data in self.map.items():
+            index, layer = tile_data
+            tile = Tile([int(i) for i in pos.split(", ")], self.tile_size, tileset[layer][index])
+            if layer == 0:
+                self.tiles.add(tile)
+            elif layer == 1:
+                self.other_tiles.add(tile)
 
     def update(self, dt, *args, **kwargs):
         self.scroll = self.camera.get_offset()
@@ -90,7 +87,7 @@ class Camera:
 
         self.offset = pygame.Vector2(0,0)
         self.total_offset = pygame.Vector2(0,0)
-        self.current_bound = pygame.Vector2(700, 0)
+        self.current_bound = pygame.Vector2(50*game_vars["tile_size"]-self.CANVAS_W, MAX_Y*game_vars["tile_size"]-self.CANVAS_H)
         # Offset for follow method
         self.method = "follow"
     
@@ -121,18 +118,9 @@ class Camera:
             self.offset.x -= self.abs_x - self.current_bound.x
             self.total_offset.x = self.current_bound.x
 
-        if self.abs_y < 0:
-            self.offset.y = 0
-            self.total_offset.y = 0
-
-        world_dim = self.game.get_world_dimensions()
-        if self.abs_x > world_dim[0] - 2*self.MIDDLE.x:
-            self.offset.x = 0
-            self.total_offset.x = world_dim[0] - 2*self.MIDDLE.x
-
-        if self.abs_y > world_dim[1] - 2*self.MIDDLE.y:
-            self.offset.y = 0
-            self.total_offset.y = world_dim[1] - 2*self.MIDDLE.y
+        if self.abs_y > self.current_bound.y:
+            self.offset.y -= self.abs_y - self.current_bound.y
+            self.total_offset.y = self.current_bound.y
 
     def auto(self):
         pass
