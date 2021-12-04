@@ -1,17 +1,14 @@
-from typing import List
-import pygame, json, ctypes, os, math
+import pygame, json, ctypes, os
 
 import tkinter as tk
 from tkinter import filedialog as fd
 from tkinter import messagebox as mb
 from tkinter import simpledialog as sd
 
-from pygame.display import get_active
-
 from res.tileset import load_set
 from res.widgets import MenuButtonPanel, Toolbar, MenuButton
 from phases.phase import Phase
-from res.config import colors, _base_dir, paralax_layers, editor_buttons
+from res.config import colors, _base_dir, paralax_layers, editor_buttons, spawn_image
 from listener import Listener
 
 
@@ -23,10 +20,9 @@ MAX_X, MAX_Y = 1024, 256 # flytta till config
 SETDIR = os.path.join(_base_dir, "assets", "tilesets")
 pygame.font.init()
 
-# add scroll in tile panel
+# add scroll in tile panel and listbox
 # fix bugs
-# new trigger system. trigger register: name: type, command. triggers: {pos: pos, name: name}
-# add slopes and entities and spawn and details
+# add slopes and details
 
 def load_level(path):
     with open(path, "r") as file:
@@ -110,22 +106,23 @@ class Editor(Phase):
         self.y_offset = 0
 
         # inputs
-        self.modes = ["place", "delete", "select", "entity", "spawn"]
+        self.modes = ["place", "delete", "select", "entity"]
         self.mode = "place"
 
-        tmp = pygame.Surface((20, 20))
-        tmp.fill(colors["red"])
+        # images
         pen, eraser, marker, entity, layer1, layer2 = editor_buttons
+
+        # panels
         self.toolbar = Toolbar(self.canvas, self.listener, (70, 0), 
-            [pen, eraser, marker, entity, tmp], 5)
-        self.toolbar.bind(("b", 0), ("e", 1), ("m", 2))
+            [pen, eraser, marker, entity], 5)
+        self.toolbar.bind(("b", 0), ("e", 1), ("m", 2), ("q", 3))
         
         self.layer_panel = Toolbar(self.canvas, self.listener, (self.toolbar.pos[0] + self.toolbar.dim[0] + 10, 0), 
             [layer1, layer2], 5)
         self.layer_panel.bind(("1", 0), ("2", 1))
 
         self.panel = Panel(self.canvas, SCREENSIZE[0] // 8, self.tileset)
-        self.listbox = Listbox(self.canvas, self.listener, SCREENSIZE[0] // 8, [])
+        self.listbox = Listbox(self.canvas, self.listener, SCREENSIZE[0] // 8, list(level["register"].keys()))
         
         #backgtound
         self.paralax_layers = [pygame.transform.scale(layer, SCREENSIZE) for layer in paralax_layers]
@@ -149,7 +146,13 @@ class Editor(Phase):
         self.mode = self.modes[self.toolbar.get_selected()]
         self.layer = self.layer_panel.get_selected()
 
-        if any(self.func_keys.values()) or any([self.toolbar.hover(), self.layer_panel.hover(), self.panel.hover() and self.mode == "place"]): 
+        hover_list = [
+            self.toolbar.hover(), self.layer_panel.hover(), 
+            self.panel.hover() and self.mode == "place",
+            self.listbox.hover
+        ]
+
+        if any(self.func_keys.values()) or any(hover_list): 
             self.other = True
         else:
             self.other = False
@@ -161,8 +164,12 @@ class Editor(Phase):
         
         self.get_movement()
 
-        if self.listener.mouse_clicked(1, hold=True) and self.mode in ["place", "delete", "spawn", "entity"] and not self.other:
-                exec("self.{}()".format(self.mode))
+        if self.listener.mouse_clicked(1, hold=True) and self.mode in ["place", "delete", "entity"] and not self.other:
+            exec("self.{}()".format(self.mode))
+        
+        if self.listener.mouse_clicked(3, hold=True):
+            if self.mode == "entity":
+                self.entity_delete()
 
         if self.mode == "select": self.select()
         else: self.selection = None
@@ -192,12 +199,20 @@ class Editor(Phase):
             elif self.listener.key_pressed("w"): way = -3
             elif self.listener.key_pressed("s"): way = 3
             self.panel.next_tile(self.layer, way)
+
         elif self.mode == "entity":
             self.listbox.update()
             
         if self.selection != None:
             self.selection.render(self.canvas, self.tile, self.x_offset, self.y_offset)
         
+        spawn_surf = pygame.transform.scale(spawn_image, (int(1.5*self.tile), 3*self.tile))
+        spawn_x, spawn_y = level["spawn"]
+        self.canvas.blit(spawn_surf, (self.tile*spawn_x+self.x_offset,
+            SCREENSIZE[1]-(MAX_Y-spawn_y+2)*self.tile+self.y_offset))
+
+        self.triggers = [trigger for trigger in self.triggers if trigger.name in level["register"].keys()]
+
         pygame.mouse.get_rel()
         self.update_level()
         
@@ -227,11 +242,11 @@ class Editor(Phase):
     def new_trigger(self, pos, name):
         self.triggers.append(Trigger(pos, name))
 
-    def add_trigger(self, name, command, type):
-        level["register"][name] = [command, type]
-
-    def remove_trigger(self, name):
-        del level["register"][name]
+    def get_trigger(self, pos):
+        for trigger in self.triggers:
+            if (trigger.x, trigger.y) == pos:
+                return trigger
+        return False
 
     def get_movement(self):
         if self.listener.mouse_clicked(4): self.tile -= 1
@@ -261,7 +276,18 @@ class Editor(Phase):
         level["spawn"] = [x, y]
 
     def entity(self):
-        pass
+        pos = self.mouse
+        trigger = self.get_trigger(pos)
+        if not trigger and self.listbox.selected != "spawn_point":
+            self.new_trigger(pos, self.listbox.selected)
+        elif self.listbox.selected == "spawn_point":
+            self.spawn()
+
+    def entity_delete(self):
+        pos = self.mouse
+        trigger = self.get_trigger(pos)
+        if trigger and trigger.name == self.listbox.selected: 
+            self.triggers.remove(trigger)
 
     def select(self):
         if self.listener.mouse_clicked(1, hold=True):
@@ -356,8 +382,22 @@ class Trigger:
     """
     def __init__(self, pos, name):
         self.x, self.y = pos
-        self.surface = pygame.Surface((1, 1)) # temp, make image
+        self.name = name
+        self.surface = pygame.Surface((50, 50)) # temp, make image, maybe not
         self.surface.fill(colors["blue"])
+
+        font = pygame.font.SysFont("Ariel", 20) 
+        if font.size(name)[0] < 50:
+            display_name = name
+        else:
+            for i in list(range(len(name)))[::-1]:
+                if font.size(name[:i] + "...")[0] < 50:
+                    display_name = name[:i] + "..."
+                    break
+        font_surf = font.render(display_name, False, colors["white knight"])
+        font_rect = font_surf.get_rect(center=(25, 25))
+
+        self.surface.blit(font_surf, font_rect.topleft)
         self.surface.set_alpha(100)
 
         self.dict = {
@@ -484,6 +524,7 @@ class Listbox:
 
         self.padding = 5
         self.selected = "spawn_point"
+        self.hover = False
 
         self.surface = pygame.Surface((width, SCREENSIZE[1]))
         self.surface.fill(colors["black magic"])
@@ -499,21 +540,27 @@ class Listbox:
         self.new_listbox = lambda i, name: ListboxItem(self.surface, self.listener, (self.padding, 
             self.padding+25*i), self.width-2*self.padding, name)
         self.boxitems = [self.new_listbox(i, name) for i, name in enumerate(self.items)]
+        self.boxitems[0].selected = True
 
     def add_trigger(self):
         trigger = TriggerConfig()
-        if trigger != None:
-            name, command, type = trigger.result
+        if trigger == None: return
+        name, command, type = trigger.result
+        if not name in level["register"].keys():
             level["register"][name] = [command, type]
             self.items.append(name)
             self.boxitems.append(self.new_listbox(len(self.items)-1, name))
+        else:
+            mb.showwarning(" ", "That trigger already exists!")
 
     def remove_trigger(self):
-        if self.selected != "spawn_point":
+        if self.selected in self.items[1:]:
             del level["register"][self.selected]
             self.items.remove(self.selected)
             boxitem = self.get_boxitem(self.selected)
             if boxitem: self.boxitems.remove(boxitem)
+            print("removed "+ self.selected)
+            self.selected = self.items[0]
 
     def get_boxitem(self, name):
         for item in self.boxitems:
@@ -525,6 +572,7 @@ class Listbox:
             item.selected = False
 
     def update(self):
+        self.surface.fill(colors["black magic"])
         x, y = pygame.mouse.get_pos()
         for item in self.boxitems:
             item.update()
@@ -533,6 +581,8 @@ class Listbox:
                 item.selected = True
                 self.selected = item.name
             
+        self.hover = True if self.rect.collidepoint(x, y) else False
+
         self.canvas.blit(self.surface, self.rect.topleft)
         self.add_button.update()
         self.remove_button.update()
