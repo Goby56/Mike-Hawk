@@ -17,10 +17,11 @@ colors = {
     "white": (255, 255, 255),
     "black": (0, 0, 0),
     "red": (255, 0, 0),
-    "blue": (0, 255, 0),
-    "green": (0, 0, 255),
+    "blue": (0, 0, 255),
+    "green": (0, 255, 0),
     "black magic": (20, 20, 20),
-    "white knight": (200, 200, 200)
+    "white knight": (200, 200, 200),
+    "cool blue": (40, 128, 235)
 }
 
 game_vars = {
