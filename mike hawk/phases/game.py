@@ -7,7 +7,7 @@ from res.animator import Animator
 from res.timers import Timer
 
 import json, os
-from res.config import _base_dir, sprite_dir, game_vars, paralax_layers, player_animations, MAX_Y
+from res.config import _base_dir, sprite_dir, game_vars, paralax_layers, player_animations, MAX_Y, colors
 from res.tileset import load_set
 
 
@@ -20,6 +20,7 @@ class Game(Phase):
             command=self.exit_phase)
         self.tiles = pygame.sprite.Group()
         self.other_tiles = pygame.sprite.Group()
+        self.triggers = pygame.sprite.Group()
         self.tile_size = game_vars["tile_size"]
 
         with open(os.path.join(_base_dir, "levels", f"{level}.json")) as f:
@@ -27,7 +28,7 @@ class Game(Phase):
         self.map = self.level["map"]
 
         tileset = list(load_set(sprite_dir, self.level["tileset"]).values())
-        self.load_tiles(tileset)
+        self.load_map(tileset)
         self.paralax = Paralax(canvas, paralax_layers)
 
         player_dim = (int(self.tile_size*1.5), int(self.tile_size*3))
@@ -37,7 +38,7 @@ class Game(Phase):
         self.camera = Camera(self, canvas)
         self.scroll = pygame.Vector2(0, 0)
 
-    def load_tiles(self, tileset):
+    def load_map(self, tileset):
         x_list = []
         for pos, tile_data in self.map.items():
             index, layer = tile_data
@@ -47,7 +48,12 @@ class Game(Phase):
             elif layer == 1:
                 self.other_tiles.add(tile)
             x_list.append(int(pos.split(", ")[0]))
-        self.max_x = max(x_list) + 1 
+        self.max_x = max(x_list) + 1
+
+        for trigger in self.level["triggers"]:
+            self.triggers.add(Trigger(trigger["pos"], 
+                *self.level["register"][trigger["name"]])
+            )
 
     def update(self, dt, *args, **kwargs):
         self.scroll = self.camera.get_offset()
@@ -55,6 +61,8 @@ class Game(Phase):
         self.limit_player()
         self.other_tiles.update(self.scroll)
         self.tiles.update(self.scroll)
+        self.triggers.update(self.scroll)
+        self.update_triggers()
         self.paralax.update(self.scroll)
 
     def render(self):
@@ -75,6 +83,22 @@ class Game(Phase):
             self.player.rect.left = 0
 
         self.player.pos.xy = self.player.rect.midbottom
+
+    def update_triggers(self):
+        collisions = pygame.sprite.spritecollide(self.player, self.triggers, False)
+        for trigger in self.triggers:
+            if trigger in collisions:
+                if trigger.type == 0:
+                    exec(trigger.command)
+                    trigger.kill()
+                elif trigger.type == 1:
+                    if not trigger.player_in_trigger:
+                        exec(trigger.command)
+                    trigger.player_in_trigger = True
+                elif trigger.type == 2:
+                    exec(trigger.command)
+            else:
+                trigger.player_in_trigger = False
 
     def kill(self):
         print("killed player")
@@ -201,8 +225,8 @@ class Player(pygame.sprite.Sprite):
         if debug:
             state = self.find_true(self.state)
             if state != None:
-                print(state, " : ", self.state_history)
-
+                #print(state, " : ", self.state_history)
+                pass
 
     def update(self, dt, collisions_objects, scroll):
 
@@ -408,3 +432,23 @@ class Tile(pygame.sprite.Sprite):
         self.pos.y += -(scroll.y)
 
         self.rect.topleft = self.pos.xy
+
+
+class Trigger(pygame.sprite.Sprite):
+    def __init__(self, pos, command, type):
+        super().__init__()
+        self.command, self.type = command, int(type)
+
+        size = game_vars["tile_size"]
+        self.pos = pygame.Vector2(pos[0]*size, pos[1]*size)
+        self.rect = pygame.Rect(self.pos.xy, (size, size))
+
+        self.player_in_trigger = False
+
+    def update(self, scroll):
+        self.pos.x -= scroll.x
+        self.pos.y -= scroll.y
+
+        self.rect.topleft = self.pos.xy
+        
+        
