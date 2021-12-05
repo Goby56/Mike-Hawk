@@ -47,7 +47,7 @@ class Game(Phase):
             elif layer == 1:
                 self.other_tiles.add(tile)
             x_list.append(int(pos.split(", ")[0]))
-        self.max_x = max(x_list)
+        self.max_x = max(x_list) + 1 
 
     def update(self, dt, *args, **kwargs):
         self.scroll = self.camera.get_offset()
@@ -124,6 +124,7 @@ class Camera:
         if self.abs_y > self.current_bound.y:
             self.offset.y -= self.abs_y - self.current_bound.y
             self.total_offset.y = self.current_bound.y
+ 
 
     def auto(self):
         pass
