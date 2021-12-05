@@ -23,7 +23,7 @@ SETDIR = os.path.join(_base_dir, "assets", "tilesets")
 pygame.font.init()
 
 # add scroll in tile panel and listbox
-# fix bugs
+# fix bugs, such as: cant replace block on same layer
 # add slopes and details
 
 def load_level(path):
