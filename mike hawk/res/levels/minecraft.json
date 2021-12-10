@@ -2532,6 +2532,58 @@
             1
         ]
     },
-    "triggers": [],
-    "register": {}
+    "triggers": [
+        {
+            "pos": [
+                0,
+                246
+            ],
+            "name": "trigger1"
+        },
+        {
+            "pos": [
+                0,
+                247
+            ],
+            "name": "trigger1"
+        },
+        {
+            "pos": [
+                0,
+                248
+            ],
+            "name": "trigger1"
+        },
+        {
+            "pos": [
+                7,
+                246
+            ],
+            "name": "trigger2"
+        },
+        {
+            "pos": [
+                7,
+                247
+            ],
+            "name": "trigger2"
+        },
+        {
+            "pos": [
+                7,
+                248
+            ],
+            "name": "trigger2"
+        }
+    ],
+    "register": {
+        "trigger1": [
+            "print('type: 1')",
+            "1"
+        ],
+        "trigger2": [
+            "print('type: 0')",
+            "0"
+        ]
+    }
 }
