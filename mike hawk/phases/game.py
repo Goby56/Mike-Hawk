@@ -240,7 +240,7 @@ class Player(pygame.sprite.Sprite):
         if debug:
             state = self.find_true(self.state)
             if state != None:
-                #print(state, " : ", self.state_history)
+                print(state, " : ", self.state_history)
                 pass
 
     def update(self, dt, collisions_objects, scroll):
@@ -283,7 +283,21 @@ class Player(pygame.sprite.Sprite):
         if direction == -1:
             self.facing["left"], self.facing["right"] = True, False
 
-        #if self.previous_state["running"] and self.state["jumping"]:
+        if self.listener.key_pressed("left shift", hold=True) and self.collisions["bottom"]:
+            self.set_state("running")
+            toggle_sprint = game_vars["sprint_multiplier"]**self.state["running"]
+            velocity_cap_multiplier = game_vars["sprint_multiplier"]
+        else:
+            toggle_sprint = 1
+            velocity_cap_multiplier = 1
+        
+        if len(self.state_history) >= 3:
+            history = self.state_history[::-1]
+            if history[0] == "falling" or history[0] == "jumping":
+                if history[1] == "running" or history[2] == "running":
+                    toggle_sprint = game_vars["sprint_multiplier"]**self.state["running"]
+                    velocity_cap_multiplier = game_vars["sprint_multiplier"]
+  
             """
             Note to self
             # Fix previous state so the determination of wheter or not
@@ -294,14 +308,6 @@ class Player(pygame.sprite.Sprite):
             # you can move the character way less.
             # """
             #pass
-
-
-        if any([self.state["running"], self.state["jumping"], self.state["falling"]]):
-            toggle_sprint = game_vars["sprint_multiplier"]**self.state["running"]
-            velocity_cap_multiplier = game_vars["sprint_multiplier"]
-        else:
-            toggle_sprint = 1
-            velocity_cap_multiplier = 1
         
         if self.collisions["bottom"]:
             friction = game_vars["ground_friction"]
@@ -352,7 +358,7 @@ class Player(pygame.sprite.Sprite):
         else:
             self.idle_timer.reset()
 
-        if self.idle_timer.finished():
+        if self.idle_timer.finished() and self.collisions["bottom"]:
             self.set_state("idle")
             self.idle_timer.reset()
             try:
