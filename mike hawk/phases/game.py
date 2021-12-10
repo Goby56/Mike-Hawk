@@ -73,10 +73,11 @@ class Game(Phase):
         self.triggers.update(self.scroll)
         self.update_triggers()
         self.paralax.update(self.scroll)
-        print(get_angle(pygame.mouse.get_pos(), self.player.rect.center))
+        #print(get_angle(pygame.mouse.get_pos(), self.player.rect.center))
         if self.listener.mouse_clicked(1, hold=True, trigger=20, id="player_shoot_bullet_1"):
             angle = get_angle(pygame.mouse.get_pos(), self.player.rect.center)
             self.bullets.add(Bullet(self.player.rect.center, angle, 20)) # player.current weapon
+            print(angle, math.cos(angle), math.sin(angle))
         self.bullets.update()
 
     def render(self):
@@ -240,7 +241,7 @@ class Player(pygame.sprite.Sprite):
         if debug:
             state = self.find_true(self.state)
             if state != None:
-                print(state, " : ", self.state_history)
+                #print(state, " : ", self.state_history)
                 pass
 
     def update(self, dt, collisions_objects, scroll):
@@ -481,7 +482,7 @@ class TriggerType:
 class Bullet(pygame.sprite.Sprite):
     def __init__(self, pos, angle: int, speed: int):
         super().__init__()
-        self.angle = angle
+        self.angle = math.radians(angle)
         self.speed = speed
         
         temp_size = 20
