@@ -78,7 +78,8 @@ class Game(Phase):
             angle = get_angle(pygame.mouse.get_pos(), self.player.rect.center)
             self.bullets.add(Bullet(self.player.rect.center, angle, 20)) # player.current weapon
             print(angle, math.cos(angle), math.sin(angle))
-        self.bullets.update()
+        self.bullets.update(self.scroll, self.tiles)
+
 
     def render(self):
         self.paralax.render(method = "bg")
@@ -491,8 +492,10 @@ class Bullet(pygame.sprite.Sprite):
         self.image.fill(colors["black"])
 
 
-    def update(self):
-        self.rect.x += math.cos(self.angle) * self.speed
-        self.rect.y += math.sin(self.angle) * self.speed
+    def update(self, scroll, tiles):
+        self.rect.x += math.cos(self.angle) * self.speed - scroll.x
+        self.rect.y += math.sin(self.angle) * self.speed - scroll.y
+        if pygame.sprite.spritecollide(self, tiles, dokill=True):
+            self.kill()
 
         
