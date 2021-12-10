@@ -1,4 +1,4 @@
-import pygame, sys, copy
+import pygame, sys, math
 sys.path.append("..")
 
 from .phase import Phase
@@ -10,6 +10,12 @@ import json, os
 from res.config import _base_dir, sprite_dir, game_vars, paralax_layers, player_animations, MAX_Y, colors
 from res.tileset import load_set
 
+# Return the angle between two points
+def get_angle(pos1, pos2):
+    delta_y = pos1[1] - pos2[1]
+    delta_x = pos1[0] - pos2[0]
+    angle = math.degrees(math.atan2(delta_y, delta_x))
+    return angle
 
 class Game(Phase):
     def __init__(self, canvas, listener, level):
@@ -64,6 +70,7 @@ class Game(Phase):
         self.triggers.update(self.scroll)
         self.update_triggers()
         self.paralax.update(self.scroll)
+        print(get_angle(pygame.mouse.get_pos(), self.player.rect.center))
 
     def render(self):
         self.paralax.render(method = "bg")
@@ -237,7 +244,7 @@ class Player(pygame.sprite.Sprite):
         self.handle_collisions(self.get_collisions(collisions_objects), axis=0)
         self.vertical_movement(dt)
         self.handle_collisions(self.get_collisions(collisions_objects), axis=1)
-        
+
         self.scroll_offset += scroll
         self.pos.x += -(scroll.x)
         self.pos.y += -(scroll.y)
