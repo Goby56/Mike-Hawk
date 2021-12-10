@@ -66,7 +66,7 @@ class Listener:
         self._counters[id] += 1
         keys = pygame.key.get_pressed()
         if key in PYGAME_CAPS_KEYS.keys():
-            if keys[PYGAME_CAPS_KEYS[key]] and self._counters[id] % trigger == 0:
+            if keys[PYGAME_CAPS_KEYS[key]] and self._counters[id] > trigger:
                 return True
             return False
         if keys[eval("pygame.K_" + key)] and self._counters[id] % trigger == 0:
@@ -86,7 +86,7 @@ class Listener:
             return False
         
         self._counters[id] += 1
-        if pygame.mouse.get_pressed()[mouse-1] and self._counters[id] % trigger == 0:
+        if pygame.mouse.get_pressed()[mouse-1] and self._counters[id] > trigger:
             self._counters[id] = 0
             return True
 
