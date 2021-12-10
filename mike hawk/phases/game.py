@@ -1,4 +1,4 @@
-import pygame, sys, copy
+import pygame, sys, math
 sys.path.append("..")
 
 from .phase import Phase
@@ -22,6 +22,8 @@ class Game(Phase):
         self.other_tiles = pygame.sprite.Group()
         self.triggers = pygame.sprite.Group()
         self.tile_size = game_vars["tile_size"]
+
+        self.bullets = pygame.sprite.Group()
 
         with open(os.path.join(_base_dir, "levels", f"{level}.json")) as f:
             self.level = json.load(f)
@@ -64,11 +66,15 @@ class Game(Phase):
         self.triggers.update(self.scroll)
         self.update_triggers()
         self.paralax.update(self.scroll)
+        if self.listener.mouse_clicked(1, hold=True, trigger=20, id="player_shoot_bullet_1"):
+            self.bullets.add(Bullet(self.player.rect.center, 30, 20)) # player.current weapon
+        self.bullets.update()
 
     def render(self):
         self.paralax.render(method = "bg")
         self.tiles.draw(self.canvas)
         self.other_tiles.draw(self.canvas)
+        self.bullets.draw(self.canvas)
         self.player.render()
         self.backbutton.update()
         self.paralax.render(method = "fg")
@@ -381,7 +387,6 @@ class Player(pygame.sprite.Sprite):
                 return key
 
 
-
 class Paralax:
     def __init__(self, canvas, layers):
         self.layers = [[image, [0,0]] for image in layers]
@@ -450,5 +455,28 @@ class Trigger(pygame.sprite.Sprite):
         self.pos.y -= scroll.y
 
         self.rect.topleft = self.pos.xy
+
+
+class TriggerType:
+    def __init__(self, command, type, mesh):
+        self.command, self.type, self.mesh = command, type, mesh
+        self.triggerd = False
+
+
+class Bullet(pygame.sprite.Sprite):
+    def __init__(self, pos, angle: int, speed: int):
+        super().__init__()
+        self.angle = angle
+        self.speed = speed
         
+        temp_size = 20
+        self.rect = pygame.Rect(pos, (20, 20))
+        self.image = pygame.Surface((temp_size, temp_size))
+        self.image.fill(colors["black"])
+
+
+    def update(self):
+        self.rect.x += math.cos(self.angle) * self.speed
+        self.rect.y += math.sin(self.angle) * self.speed
+
         
