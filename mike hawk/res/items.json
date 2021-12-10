@@ -1,0 +1,16 @@
+{
+    "weapon": {
+        "ak47": {
+            "image": null,
+            "reload": 120,
+            "velocity": 7,
+            "firerate": 5
+        },
+        "glock": {
+            "image": null,
+            "reload": 60,
+            "velocity": 3,
+            "firerate": 10
+        }
+    }
+}
