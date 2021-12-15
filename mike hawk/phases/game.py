@@ -186,7 +186,7 @@ class Player(pygame.sprite.Sprite):
 
         # Tags
         self.collisions = {"right":False, "left":False, "top":False, "bottom":False}
-        self.state = {"idle":False, "walking":False, "jumping":False, "running":False, "falling":False, "charging":False}
+        self.state = {"idle":False, "walking":False, "jumping":False, "running":False, "falling":False, "crouching":False, "crouch_walking":False}
         self.previous_state = None
         self.state_history = []
         self.facing = {"left":False, "right":True}
@@ -242,7 +242,7 @@ class Player(pygame.sprite.Sprite):
         if debug:
             state = self.find_true(self.state)
             if state != None:
-                #print(state, " : ", self.state_history)
+                print(state, " : ", self.state_history)
                 pass
 
     def update(self, dt, collisions_objects, scroll):
@@ -285,20 +285,18 @@ class Player(pygame.sprite.Sprite):
         if direction == -1:
             self.facing["left"], self.facing["right"] = True, False
 
-        if self.listener.key_pressed("left shift", hold=True) and self.collisions["bottom"]:
-            self.set_state("running")
-            toggle_sprint = game_vars["sprint_multiplier"]**self.state["running"]
-            velocity_cap_multiplier = game_vars["sprint_multiplier"]
-        else:
-            toggle_sprint = 1
-            velocity_cap_multiplier = 1
+        increase_max_vel = False
+        movement_modifier = 1
+    
+        if self.collisions["bottom"]:
+            if abs(self.velocity.x) > 0:
+                if self.listener.key_pressed("left shift", hold=True):
+                    self.set_state("running")
+                elif self.listener.key_pressed("left control", hold=True):
+                    self.set_state("crouch_walking")
+            elif self.listener.key_pressed("left control", hold=True):
+                self.set_state("crouching")
         
-        if len(self.state_history) >= 3:
-            history = self.state_history[::-1]
-            if history[0] == "falling" or history[0] == "jumping":
-                if history[1] == "running" or history[2] == "running":
-                    toggle_sprint = game_vars["sprint_multiplier"]**self.state["running"]
-                    velocity_cap_multiplier = game_vars["sprint_multiplier"]
   
             """
             Note to self
@@ -316,9 +314,24 @@ class Player(pygame.sprite.Sprite):
         else:
             friction = game_vars["air_resistance"]
 
-        self.acceleration.x = game_vars["speed"]*direction*toggle_sprint
+        if self.state["crouch_walking"]:
+            movement_modifier = game_vars["crouch_slowdown"]
+        elif self.state["running"]:
+            movement_modifier = game_vars["sprint_multiplier"]
+            increase_max_vel = True
+        elif self.state["walking"]:
+            movement_modifier = 1
+
+        if len(self.state_history) >= 3:
+            history = self.state_history[::-1]
+            if history[0] == "falling" or history[0] == "jumping":
+                if history[1] == "running" or history[2] == "running":
+                    movement_modifier = game_vars["sprint_multiplier"]
+                    increase_max_vel = True
+
+        self.acceleration.x = game_vars["speed"]*direction*movement_modifier
         self.velocity.x += dt*(self.acceleration.x + self.velocity.x*friction)
-        self.limit_velocity(game_vars["max_vel"]*velocity_cap_multiplier)
+        self.limit_velocity(game_vars["max_vel"], increase_max_vel)
         self.pos.x += int(self.velocity.x*dt + 0.5*(self.acceleration.x * dt**2))
 
         self.rect.centerx = self.pos.x
@@ -349,7 +362,9 @@ class Player(pygame.sprite.Sprite):
         
         self.rect.bottom = self.pos.y
 
-    def limit_velocity(self, max_velocity):
+    def limit_velocity(self, max_velocity, increase_vel):
+
+        if increase_vel == True: max_velocity *= game_vars["sprint_multiplier"]
         if abs(self.velocity.x) > max_velocity:
             self.velocity.x = max_velocity if self.velocity.x > 0 else -max_velocity 
         if abs(self.velocity.x) < 0.1: self.velocity.x = 0

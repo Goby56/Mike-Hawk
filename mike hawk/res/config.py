@@ -9,6 +9,7 @@ MAX_Y = 256
 import ctypes
 SCREENSIZE = ctypes.windll.user32.GetSystemMetrics(0), ctypes.windll.user32.GetSystemMetrics(1)
 SCREEN_WIDTH, SCREEN_HEIGHT = SCREENSIZE
+#SCREENSIZE = 400, 200
 print(SCREENSIZE)
 fps = 60
 _screen_offset = SCREEN_WIDTH / 1280
@@ -34,7 +35,8 @@ game_vars = {
     "max_vel": 3*_screen_offset,
     "tile_size": int(40*_screen_offset),
     "sprint_multiplier": 1.5,
-    "jump_amplifier": 1.5
+    "jump_amplifier": 1.5,
+    "crouch_slowdown": 0.5
 }
 
 
