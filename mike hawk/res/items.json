@@ -4,13 +4,15 @@
             "image": null,
             "reload": 120,
             "velocity": 7,
-            "firerate": 5
+            "rof": 5,
+            "recoil": 2
         },
         "glock": {
             "image": null,
             "reload": 60,
             "velocity": 3,
-            "firerate": 10
+            "rof": 10,
+            "recoil": 0.5
         }
     }
 }
