@@ -6,6 +6,10 @@ from res.timers import Timer
 
 
 class Player(pygame.sprite.Sprite):
+    """
+    The player entity class which handles everything from 
+    updating the player to rendering it.
+    """
     def __init__(self, listener, canvas, pos, size):
         super().__init__()
         self.listener = listener

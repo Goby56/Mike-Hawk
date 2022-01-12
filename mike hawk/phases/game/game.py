@@ -2,27 +2,22 @@ import pygame, sys, math
 sys.path.append("..")
 
 from phases.game.game_res.camera import Camera, Paralax
+from phases.game.game_res.map import Tile, Trigger, TriggerType
 
 from phases.phase import Phase
 from res.widgets import MenuButton
-from res.animator import Animator
-from res.timers import Timer
 
 import json, os
-from res.config import _base_dir, sprite_dir, game_vars, paralax_layers, player_animations, MAX_Y, colors
+from res.config import _base_dir, sprite_dir, game_vars, paralax_layers, colors
 from res.tileset import load_set
 
-from phases.game.game_res.Entities.player import Player
-
-# Return the angle between two points
-def get_angle(pos1, pos2):
-    delta_y = pos1[1] - pos2[1]
-    delta_x = pos1[0] - pos2[0]
-    angle = math.degrees(math.atan2(delta_y, delta_x))
-    angle = angle if angle >= 0 else 360 + angle
-    return angle
+from phases.game.game_res.entities.player import Player
+from phases.game.game_res.entities.bullet import Bullet
 
 class Game(Phase):
+    """
+    
+    """
     def __init__(self, canvas, listener, level):
         self.canvas = canvas
         self.listener = listener
@@ -122,102 +117,12 @@ class Game(Phase):
                 trigger.player_in_trigger = False
 
     def kill(self):
-        print("killed player")
+        print("killed player")  
 
-
-class Tile(pygame.sprite.Sprite):
-    def __init__(self, pos, size, image):
-        super().__init__()
-        self.size = size, size
-        self.pos = pygame.Vector2(pos[0]*self.size[0], pos[1]*self.size[1])
-        self.image = image
-        self.image = pygame.transform.scale(self.image, self.size)
-        self.rect = self.image.get_rect(topleft = self.pos)
-        self.scroll_offset = pygame.Vector2(0, 0)
-
-    @property
-    def abs_x(self):
-        return self.pos.x + self.scroll_offset.x
-
-    @property
-    def abs_y(self):
-        return self.pos.y - self.scroll_offset.y
-
-    def update(self, scroll):
-        self.scroll_offset += scroll
-        self.pos.x += -(scroll.x)
-        self.pos.y += -(scroll.y)
-
-        self.rect.topleft = self.pos.xy
-
-
-class Trigger(pygame.sprite.Sprite):
-    def __init__(self, pos, command, type):
-        super().__init__()
-        self.command, self.type = command, int(type)
-
-        size = game_vars["tile_size"]
-        self.pos = pygame.Vector2(pos[0]*size, pos[1]*size)
-        self.rect = pygame.Rect(self.pos.xy, (size, size))
-
-        self.player_in_trigger = False
-
-    def update(self, scroll):
-        self.pos.x -= scroll.x
-        self.pos.y -= scroll.y
-
-        self.rect.topleft = self.pos.xy
-
-
-class TriggerType:
-    def __init__(self, command, type, mesh):
-        self.command, self.type, self.mesh = command, type, mesh
-        self.triggerd = False
-
-
-class Bullet(pygame.sprite.Sprite):
-    def __init__(self, pos, angle: int, speed: int):
-        super().__init__()
-        self.angle = math.radians(angle)
-        self.speed = speed
-        
-        temp_size = 20
-        self.rect = pygame.Rect(pos, (20, 20))
-        self.image = pygame.Surface((temp_size, temp_size))
-        self.image.fill(colors["black"])
-
-
-    def update(self, scroll, tiles):
-        self.rect.x += math.cos(self.angle) * self.speed - scroll.x
-        self.rect.y += math.sin(self.angle) * self.speed - scroll.y
-        if pygame.sprite.spritecollide(self, tiles, dokill=True):
-            self.kill()
-
-
-class Weapon(pygame.sprite.Sprite):
-    def __init__(self, listener, stats):
-        super().__init__()
-        self.listener = listener
-        self.rof = stats["rof"]
-        self.reload = stats["reload"]
-        self.recoil = stats["recoil"]
-        self.velocity = stats["velocity"]
-
-        self.rect = pygame.Rect(0, 0, 10, 10)
-        self.nozzle = self.rect.midright # change with rotation
-        self.reloading = False
-
-    def fire(self, angle, bullets):
-        bullets.add(Bullet(self.nozzle, angle, self.velocity))
-        # set player recoil vel
-
-    def update(self, bullets):
-        mouse = pygame.mouse.get_pos()
-        angle = get_angle(self.nozzle, mouse)
-        if self.listener.mouse_clicked(1, hold=True, trigger=self.rof, id="weapon_fire") and not self.reloading:
-            self.fire(angle, bullets)
-
-    def render(self):
-        pass
-
-        
+# Return the angle between two points
+def get_angle(pos1, pos2):
+    delta_y = pos1[1] - pos2[1]
+    delta_x = pos1[0] - pos2[0]
+    angle = math.degrees(math.atan2(delta_y, delta_x))
+    angle = angle if angle >= 0 else 360 + angle
+    return angle 
