@@ -1,8 +1,8 @@
 import pygame, sys
 sys.path.append("..")
 
-from .phase import Phase
-from .game import Game
+from phases.phase import Phase
+from phases.game.game import Game
 from res.widgets import MenuButton, MenuButtonPanel
 from res.config import dynamite_frames, SCREEN_RECT
 
