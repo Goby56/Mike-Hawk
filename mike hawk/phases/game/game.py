@@ -2,17 +2,15 @@ import pygame, sys, math
 sys.path.append("..")
 
 from phases.game.game_res.camera import Camera, Paralax
+from phases.game.game_res.entities.player import Player
 
 from phases.phase import Phase
 from res.widgets import MenuButton
-from res.animator import Animator
-from res.timers import Timer
 
 import json, os
 from res.config import _base_dir, sprite_dir, game_vars, paralax_layers, player_animations, MAX_Y, colors
 from res.tileset import load_set
 
-from phases.game.game_res.Entities.player import Player
 
 # Return the angle between two points
 def get_angle(pos1, pos2):

@@ -1,6 +1,6 @@
 import pygame, sys, os
 sys.path.append("..")
-from res.config import _base_dir, sprite_dir, game_vars, paralax_layers, player_animations, MAX_Y, colors
+from res.config import sprite_dir, game_vars, player_animations
 from res.animator import Animator
 from res.timers import Timer
 
