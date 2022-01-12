@@ -3,6 +3,7 @@ sys.path.append("..")
 
 from phases.game.game_res.camera import Camera, Paralax
 from phases.game.game_res.map import Tile, Trigger, TriggerType
+from phases.game.game_res.entities.player import Player
 
 from phases.phase import Phase
 from res.widgets import MenuButton
