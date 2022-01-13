@@ -79,6 +79,7 @@ class Game(Phase):
             self.bullets.add(Bullet(self.player.rect.center, angle, 20)) # player.current weapon
             print(angle, math.cos(angle), math.sin(angle))
         self.bullets.update(self.scroll, self.tiles)
+        Tile.tiles = self.tiles
 
 
     def render(self):
