@@ -4,6 +4,7 @@ sys.path.append("..")
 from res.config import game_vars
 
 class Tile(pygame.sprite.Sprite):
+    tiles = pygame.sprite.Group()
     def __init__(self, pos, size, image):
         super().__init__()
         self.size = size, size
