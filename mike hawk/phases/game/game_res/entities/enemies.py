@@ -37,7 +37,9 @@ class Enemy(pygame.sprite.Sprite):
         return state
 
     def get_distance(self, player_pos):
-        """returns distance to players in tiles"""
+        """
+        returns distance to players and the direction to the playes (in tiles) # fix so its acctualy in tiles
+        """
         value = player_pos - self.rect.midbottom # may need to change order
         return abs(value), value/abs(value)
 
