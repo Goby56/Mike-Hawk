@@ -1,3 +1,4 @@
+from types import new_class
 import pygame, os, json
 from .config import sprite_dir
 
@@ -17,13 +18,32 @@ class Spritesheet:
         self.meta_data = os.path.join(sprite_dir, self.filename + ".json")
         with open(self.meta_data) as f:
             self.data = json.load(f)
+        self.reorder_frames()
+
+    def reorder_frames(self):
+        new_sheet = dict()
+        for name in self.data["frames"].keys():
+            tag = str()
+            frame = int()
+
+            #tag = name.replaceAll("[0-9]","")
+            for char in name:
+                if char.isalpha():
+                    tag = tag + char
+                elif char.isdigit():
+                    frame = frame + int(char)
+
+            new_sheet[tag][frame] = self.data["frames"][name]
+
+        self.data = new_sheet
 
     def parse_sprite(self):
         sprite_data = dict()
-        for name in self.data["frames"].keys():
-            sd = self.data["frames"][name]["frame"] # Sprite data
-            x, y, w, h = sd["x"], sd["y"], sd["w"], sd["h"]
-            sprite_data[name] = (x,y,w,h)
+        for tag in self.data.keys():
+            for i in range(len(self.data[tag])):
+                sd = self.data[tag][i]["frame"] # Sprite data
+                x, y, w, h = sd["x"], sd["y"], sd["w"], sd["h"]
+                sprite_data[tag][i] = (x,y,w,h)
         return sprite_data
 
     def get_sprite(self, data, color_key = (0,0,0)):
