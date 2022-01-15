@@ -3,7 +3,6 @@ sys.path.append("..")
 
 from phases.game.game_res.camera import Camera, Paralax
 from phases.game.game_res.map import Tile, Trigger, TriggerType
-from phases.game.game_res.entities.player import Player
 
 from phases.phase import Phase
 from res.widgets import MenuButton
@@ -37,7 +36,6 @@ class Game(Phase):
             self.level = json.load(f)
         self.map = self.level["map"]
 
-        print(self.level["tileset"])
 
         tileset = list(load_set(os.path.join(spritesheet_dir, "old tiles"), self.level["tileset"]).values())
         self.load_map(tileset)
@@ -51,7 +49,7 @@ class Game(Phase):
         self.scroll = pygame.Vector2(0, 0)
 
         self.enemy_group = pygame.sprite.Group()
-        self.enemy_group.add(Enemy((3, 5)))
+        self.enemy_group.add(Enemy((5, 10)))
         
 
     def load_map(self, tileset):
@@ -87,7 +85,7 @@ class Game(Phase):
             print(angle, math.cos(angle), math.sin(angle))
         self.bullets.update(self.scroll, self.tiles)
         Tile.tiles = self.tiles
-        self.enemy_group.update(self.player.pos)
+        self.enemy_group.update(self.player.pos, self.scroll)
 
 
     def render(self):

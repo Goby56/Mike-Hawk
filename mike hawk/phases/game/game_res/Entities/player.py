@@ -111,7 +111,7 @@ class Player(pygame.sprite.Sprite):
     def update(self, dt, collisions_objects, scroll):
 
         self.check_idle()
-        self.check_state(True)
+        self.check_state(False)
 
         self.horizontal_movement(dt)
         self.handle_collisions(self.get_collisions(collisions_objects), axis=0)

@@ -61,9 +61,10 @@ class Enemy(pygame.sprite.Sprite):
         player_pos: player position
         """
         x, y = player_pos
-        self.player_pos = (x-scroll.x, y-scroll.y)
+        self.player_pos = player_pos
+        self.scroll = scroll
         self.distance, self.direction = self.get_distance(self.player_pos) # distance to player
-        self.velocity[1] = game_vars["gravity"]
+        self.velocity[1] = 5#game_vars["gravity"]
 
         if self.engaged and self.distance >= self.attack_range:
             self.move()
@@ -72,18 +73,22 @@ class Enemy(pygame.sprite.Sprite):
         self.y_collisions()
         self.rect.y += self.velocity[1]
 
+        print(self.velocity, self.direction)
+
+        # self.rect.x -= self.scroll.x
+        # self.rect.y -= self.scroll.y
+
     def move(self):
         """moves towards player"""
         self.velocity[0] = self.speed
         if self.x_collisions() and self.on_ground and not self.jumping:
             self.jump()
 
-        print(self.velocity)
+
         self.rect.x += self.velocity[0]*self.direction
 
     def jump(self):
         """jumps"""
-        print("jump")
 
     def x_collisions(self):
         for tile in self.collisions:
