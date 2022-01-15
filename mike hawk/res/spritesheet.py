@@ -38,7 +38,7 @@ class Spritesheet:
         with open(os.path.join(_base_dir, "animation_delays.json"), "r") as f:
             data = json.load(f)
             if self.filename not in data.keys():
-                self.add_animation_information()
+                self.add_animation_template(self)
         self.instances[self.filename] = self
 
 
@@ -91,14 +91,16 @@ class Spritesheet:
                 data = self.data[tag][str(frame)]
                 self.frames[tag].append(self.get_sprite(data))
 
-    def add_animation_information(self):
-        tags = self.data.keys()
-        new_data = {tag: [1 for x in range(len(self.data[tag]))] for tag in tags}
-        pprint.pprint(new_data)
+    def add_animation_template(self, instance):
+        """
+        Creates a template of the given spritesheet {instance} in  
+        """
+        tags = instance.data.keys()
+        new_data = {tag: [5 for x in range(len(instance.data[tag]))] for tag in tags}
 
         with open(os.path.join(_base_dir, "animation_delays.json"), "r+") as f:
             data = json.load(f)
-            data[self.filename] = new_data
+            data[instance.filename] = new_data
             f.seek(0)
             json.dump(data, f, indent=4)
             #f.truncate()

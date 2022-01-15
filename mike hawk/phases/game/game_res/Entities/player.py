@@ -1,30 +1,68 @@
 import pygame, sys, os
 sys.path.append("..")
-from res.config import spritesheet_dir, game_vars, player_animations
+from res.config import spritesheet_dir, game_vars, player_animations, bounding_boxes, colors
 from res.animator import Animator
 from res.timers import Timer
+from res.spritesheet import Spritesheet
 
 
 class Player(pygame.sprite.Sprite):
     """
-    The player entity class which handles everything from 
-    updating the player to rendering it.
+    pos: Position of where the player first spawns
+    height: The height of the player measured in X tiles (pixels)
     """
-    def __init__(self, listener, canvas, pos, size):
+    def __init__(self, listener, canvas, pos, height):
         super().__init__()
         self.listener = listener
         self.canvas = canvas
         self.pos = pygame.Vector2(pos)
-        self.image = pygame.transform.scale(pygame.image.load(os.path.join(spritesheet_dir, "player", "player_idle.png")), size)
-        self.frames = player_animations
-        for i, frame in enumerate(self.frames):
-            self.frames[i] = pygame.transform.scale(frame, size)
-        self.width, self.height = self.image.get_width(), self.image.get_height()
-        self.rect = self.image.get_rect(midbottom=self.pos)
+        self.height = height
+
+        # Class instantiations
+        self.spritesheet = Spritesheet("jones_hawk")
+        self.animator = Animator("jones_hawk", starting_animation="idle")
+        
+        # Rects and image scaling
+        pbox = bounding_boxes["player"] # Player boxes
+        hitbox_wh_ratio = pbox["hitbox"].x/pbox["hitbox"].y # Drawbox width/height ratio
+        scaled_hitbox = pygame.Vector2(height*hitbox_wh_ratio, height) # Scale image to these dimensions
+
+        self.rect = pygame.Rect((0,0), scaled_hitbox)
+        self.rect.midbottom = self.pos.xy
+
+        drawbox_scaling = pbox["drawbox"].elementwise()/pbox["hitbox"].elementwise()
+        drawbox_dim = scaled_hitbox.elementwise()*drawbox_scaling.elementwise()
+
+        for tag in self.spritesheet.frames.keys():
+            for i, frame in enumerate(self.spritesheet.frames[tag]):
+                self.spritesheet.frames[tag][i] = pygame.transform.scale(frame, (int(drawbox_dim.x), int(drawbox_dim.y)))
+
+        self.drawbox = pygame.Rect((0,0), drawbox_dim)
+        self.drawbox.midbottom = self.pos.xy
+
+        # # Rects and image scaling
+        # pbox = bounding_boxes["player"] # Player boxes
+        # drawbox_wh_ratio = pbox["drawbox"].x/pbox["drawbox"].y # Drawbox width/height ratio
+        # scaled_dim = pygame.Vector2(height*drawbox_wh_ratio, height) # Scale image to these dimensions
+
+        # for tag in self.spritesheet.frames.keys():
+        #     for i, frame in enumerate(self.spritesheet.frames[tag]):
+        #         self.spritesheet.frames[tag][i] = pygame.transform.scale(frame, (int(scaled_dim.x), int(scaled_dim.y)))
+
+        # self.drawbox_scaling = scaled_dim.elementwise()/pbox["drawbox"].elementwise()
+        # self.drawbox = pygame.Rect((0,0), scaled_dim)
+        # self.drawbox.midbottom = self.pos.xy
+
+        # hitbox_scaling = pbox["hitbox"].elementwise()/pbox["drawbox"].elementwise()
+        # hitbox_dim = scaled_dim.elementwise()*hitbox_scaling.elementwise()
+        # self.rect = pygame.Rect((0,0), hitbox_dim)
+        # self.rect.midbottom = self.pos.xy
 
         # Tags
         self.collisions = {"right":False, "left":False, "top":False, "bottom":False}
-        self.state = {"idle":False, "walking":False, "jumping":False, "running":False, "falling":False}
+        self.state = {
+            "idle":False, "walking":False, "running":False, 
+            "jump":False, "jumping":False, "falling":False}
         self.animation_state = {
             "idle":False, "running":False, "rolling":False, 
             "whip_slash":False, "whip_stun":False, "fire_pistol":False, "death":False,
@@ -39,10 +77,10 @@ class Player(pygame.sprite.Sprite):
         self.idle_timer = Timer("down", "ticks", 2)
         self.jump_hold_timer = Timer("down", "ticks", 15)
 
+        # Other
         self.acceleration = pygame.Vector2(0, game_vars["gravity"])
         self.velocity = pygame.Vector2(0, 0)
         self.scroll_offset = pygame.Vector2(0, 0)
-        self.animator = Animator(self.frames, 0.2)
 
     @property
     def abs_x(self):
@@ -103,17 +141,21 @@ class Player(pygame.sprite.Sprite):
         self.pos.y += -(scroll.y)
 
         self.rect.midbottom = self.pos.xy
+        self.drawbox.midbottom = self.pos.xy
 
     def render(self):
         if abs(self.velocity.x) > game_vars["max_vel"]*0.25:
-            frame = self.animator.get_frame("walking")
+            frame = self.animator.get_frame("running")
             if self.velocity.x < 0:
                 frame = pygame.transform.flip(frame, True, False)
         else:
-            frame = self.image
+            frame = self.animator.get_frame("idle")
             if self.facing["left"]:
                 frame = pygame.transform.flip(frame, True, False)
-        self.canvas.blit(frame, self.rect.topleft)
+        self.canvas.blit(frame, self.drawbox.topleft)
+
+        pygame.draw.rect(self.canvas, colors["cool blue"], self.drawbox, width=1)
+        pygame.draw.rect(self.canvas, colors["red"], self.rect, width=1)
 
     def horizontal_movement(self, dt):
         dt *= 60
@@ -175,6 +217,7 @@ class Player(pygame.sprite.Sprite):
         self.pos.x += int(self.velocity.x*dt + 0.5*(self.acceleration.x * dt**2))
 
         self.rect.centerx = self.pos.x
+        self.drawbox.centerx = self.pos.x
 
     def vertical_movement(self, dt):
         dt *= 60
@@ -201,6 +244,7 @@ class Player(pygame.sprite.Sprite):
         self.pos.y += int(self.velocity.y*dt + 0.5*(self.acceleration.y * dt**2))   
         
         self.rect.bottom = self.pos.y
+        self.drawbox.bottom = self.pos.y
 
     def limit_velocity(self, max_velocity, increase_vel):
 
@@ -248,6 +292,7 @@ class Player(pygame.sprite.Sprite):
                         self.velocity.y = 0
                         self.collisions["top"] = True
             self.pos.xy = self.rect.midbottom
+            self.drawbox.midbottom = self.pos.xy
 
     def get_collisions(self, group):
         collisions = pygame.sprite.spritecollide(self, group, False)

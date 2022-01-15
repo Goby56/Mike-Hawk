@@ -6,7 +6,7 @@ PLAYER_SPEED = 10
 TERMINAL_VELOCITY = 100
 MAX_Y = 256
 
-import ctypes
+import ctypes, pygame, os
 SCREENSIZE = ctypes.windll.user32.GetSystemMetrics(0), ctypes.windll.user32.GetSystemMetrics(1)
 SCREEN_WIDTH, SCREEN_HEIGHT = SCREENSIZE
 #SCREENSIZE = 400, 200
@@ -39,10 +39,17 @@ game_vars = {
     "crouch_slowdown": 0.5
 }
 
+bounding_boxes = {
+    "player": {
+        "hitbox":pygame.Vector2(18,22),
+        "drawbox":pygame.Vector2(64,32)
+    }
+
+}
+
 
 
 # LOAD RESOURCES
-import pygame, os
 
 SCREEN_RECT = pygame.Rect((0, 0), SCREENSIZE)
 PYGAME_CAPS_KEYS = {

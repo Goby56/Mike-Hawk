@@ -9,7 +9,7 @@ from phases.phase import Phase
 from res.widgets import MenuButton
 
 import json, os
-from res.config import _base_dir, spritesheet_dir, game_vars, paralax_layers, colors
+from res.config import _base_dir, spritesheet_dir, game_vars, paralax_layers, colors, bounding_boxes
 from res.tileset import load_set
 
 from phases.game.game_res.entities.player import Player
@@ -42,9 +42,9 @@ class Game(Phase):
         self.load_map(tileset)
         self.paralax = Paralax(canvas, paralax_layers)
 
-        player_dim = (int(self.tile_size*1.5), int(self.tile_size*3))
+        player_height = int(self.tile_size*2)
         spawn_x, spawn_y = self.level["spawn"]
-        self.player = Player(listener, canvas, (spawn_x*self.tile_size, spawn_y*self.tile_size), player_dim)
+        self.player = Player(listener, canvas, (spawn_x*self.tile_size, spawn_y*self.tile_size), player_height)
         
         self.camera = Camera(self, canvas)
         self.scroll = pygame.Vector2(0, 0)
