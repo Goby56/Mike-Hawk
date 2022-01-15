@@ -1,0 +1,70 @@
+{
+    "example_filename": {
+        "example_tag1": [
+            1,
+            1,
+            1,
+            1,
+            4,
+            1
+        ],
+        "example_tag2": [
+            2,
+            2,
+            2,
+            3,
+            3,
+            1
+        ],
+        "example_tag3": [
+            5,
+            3,
+            3,
+            2,
+            1,
+            1
+        ]
+    },
+    "dynamite": {
+        "dynamite": [
+            1,
+            1,
+            1,
+            1,
+            1
+        ]
+    },
+    "desertdemo": {
+        "desertdemo": [
+            1,
+            1,
+            1,
+            1
+        ]
+    },
+    "demo_hawk": {
+        "walking": [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+        ],
+        "idle": [
+            1
+        ]
+    },
+    "editor_buttons": {
+        "editor_buttons": [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+        ]
+    }
+}

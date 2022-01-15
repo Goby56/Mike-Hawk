@@ -1,6 +1,6 @@
 import pygame, sys, os
 sys.path.append("..")
-from res.config import sprite_dir, game_vars, player_animations
+from res.config import spritesheet_dir, game_vars, player_animations
 from res.animator import Animator
 from res.timers import Timer
 
@@ -15,7 +15,7 @@ class Player(pygame.sprite.Sprite):
         self.listener = listener
         self.canvas = canvas
         self.pos = pygame.Vector2(pos)
-        self.image = pygame.transform.scale(pygame.image.load(os.path.join(sprite_dir, "player_idle.png")), size)
+        self.image = pygame.transform.scale(pygame.image.load(os.path.join(spritesheet_dir, "player", "player_idle.png")), size)
         self.frames = player_animations
         for i, frame in enumerate(self.frames):
             self.frames[i] = pygame.transform.scale(frame, size)
@@ -24,7 +24,12 @@ class Player(pygame.sprite.Sprite):
 
         # Tags
         self.collisions = {"right":False, "left":False, "top":False, "bottom":False}
-        self.state = {"idle":False, "walking":False, "jumping":False, "running":False, "falling":False, "crouching":False, "crouch_walking":False}
+        self.state = {"idle":False, "walking":False, "jumping":False, "running":False, "falling":False}
+        self.animation_state = {
+            "idle":False, "running":False, "rolling":False, 
+            "whip_slash":False, "whip_stun":False, "fire_pistol":False, "death":False,
+            "falling":False, "jump":False, "jumping":False
+            }
         self.previous_state = None
         self.state_history = []
         self.facing = {"left":False, "right":True}
@@ -101,7 +106,7 @@ class Player(pygame.sprite.Sprite):
 
     def render(self):
         if abs(self.velocity.x) > game_vars["max_vel"]*0.25:
-            frame = self.animator.get_frame()
+            frame = self.animator.get_frame("walking")
             if self.velocity.x < 0:
                 frame = pygame.transform.flip(frame, True, False)
         else:
@@ -130,10 +135,8 @@ class Player(pygame.sprite.Sprite):
             if abs(self.velocity.x) > 0:
                 if self.listener.key_pressed("left shift", hold=True):
                     self.set_state("running")
-                elif self.listener.key_pressed("left control", hold=True):
-                    self.set_state("crouch_walking")
-            elif self.listener.key_pressed("left control", hold=True):
-                self.set_state("crouching")
+            else:
+                self.set_state("walking")
         
   
             """
@@ -152,9 +155,8 @@ class Player(pygame.sprite.Sprite):
         else:
             friction = game_vars["air_resistance"]
 
-        if self.state["crouch_walking"]:
-            movement_modifier = game_vars["crouch_slowdown"]
-        elif self.state["running"]:
+        
+        if self.state["running"]:
             movement_modifier = game_vars["sprint_multiplier"]
             increase_max_vel = True
         elif self.state["walking"]:

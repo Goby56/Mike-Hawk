@@ -1,7 +1,9 @@
-import pygame, sys, time
-sys.path.append("..")
+import sys, time, json, pprint
 
 class Animator:
+    """
+    Provides an easy way to access which frame should be displayed 
+    """
     instances = []
 
     def __init__(self, frames, delay):
@@ -13,7 +15,7 @@ class Animator:
     def update(self, dt):
         self.counter += self.delay
 
-    def get_frame(self):
+    def get_frame(self, tag):
         return self.frames[int(self.counter%len(self.frames))]
 
     def set_frame(self, n, tag=None):
