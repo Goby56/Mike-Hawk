@@ -111,7 +111,7 @@ class Player(pygame.sprite.Sprite):
     def update(self, dt, collisions_objects, scroll):
 
         self.check_idle()
-        self.check_state(True)
+        self.check_state()
 
         self.horizontal_movement(dt)
         self.handle_collisions(self.get_collisions(collisions_objects), axis=0)
@@ -151,16 +151,10 @@ class Player(pygame.sprite.Sprite):
             self.facing["left"], self.facing["right"] = False, True 
         if direction == -1:
             self.facing["left"], self.facing["right"] = True, False
-
-        increase_max_vel = False
-        movement_modifier = 1
     
         if self.collisions["bottom"]:
             if abs(self.velocity.x) > 0:
-                if self.listener.key_pressed("left shift", hold=True):
-                    self.set_state("running")
-            else:
-                self.set_state("walking")
+                self.set_state("running")
         
   
             """
@@ -173,22 +167,9 @@ class Player(pygame.sprite.Sprite):
         else:
             friction = game_vars["air_resistance"]
 
-        if self.state["running"]:
-            movement_modifier = game_vars["sprint_multiplier"]
-            increase_max_vel = True
-        elif self.state["walking"]:
-            movement_modifier = 1
-
-        if len(self.state_history) >= 3:
-            history = self.state_history[::-1]
-            if history[0] == "falling" or history[0] == "jumping":
-                if history[1] == "running" or history[2] == "running":
-                    movement_modifier = game_vars["sprint_multiplier"]
-                    increase_max_vel = True
-
-        self.acceleration.x = game_vars["speed"]*direction*movement_modifier
+        self.acceleration.x = game_vars["speed"]*direction
         self.velocity.x += dt*(self.acceleration.x + self.velocity.x*friction)
-        self.limit_velocity(game_vars["max_vel"], increase_max_vel)
+        self.limit_velocity(game_vars["max_vel"])
         self.pos.x += int(self.velocity.x*dt + 0.5*(self.acceleration.x * dt**2))
 
         self.rect.centerx = self.pos.x
@@ -221,7 +202,7 @@ class Player(pygame.sprite.Sprite):
         self.rect.bottom = self.pos.y
         self.drawbox.bottom = self.pos.y
 
-    def limit_velocity(self, max_velocity, increase_vel):
+    def limit_velocity(self, max_velocity, increase_vel=False):
         if increase_vel == True: max_velocity *= game_vars["sprint_multiplier"]
         if abs(self.velocity.x) > max_velocity:
             self.velocity.x = max_velocity if self.velocity.x > 0 else -max_velocity 

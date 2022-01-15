@@ -36,7 +36,8 @@ game_vars = {
     "tile_size": int(40*_screen_offset),
     "sprint_multiplier": 1.5,
     "jump_amplifier": 1.5,
-    "crouch_slowdown": 0.5
+    "crouch_slowdown": 0.5,
+    "player_height": 2
 }
 
 bounding_boxes = {
