@@ -27,36 +27,18 @@ class Player(pygame.sprite.Sprite):
         hitbox_wh_ratio = pbox["hitbox"].x/pbox["hitbox"].y # Drawbox width/height ratio
         scaled_hitbox = pygame.Vector2(height*hitbox_wh_ratio, height) # Scale image to these dimensions
 
-        self.rect = pygame.Rect((0,0), scaled_hitbox)
-        self.rect.midbottom = self.pos.xy
-
         drawbox_scaling = pbox["drawbox"].elementwise()/pbox["hitbox"].elementwise()
         drawbox_dim = scaled_hitbox.elementwise()*drawbox_scaling.elementwise()
 
-        for tag in self.spritesheet.frames.keys():
-            for i, frame in enumerate(self.spritesheet.frames[tag]):
-                self.spritesheet.frames[tag][i] = pygame.transform.scale(frame, (int(drawbox_dim.x), int(drawbox_dim.y)))
+        self.rect = pygame.Rect((0,0), scaled_hitbox)
+        self.rect.midbottom = self.pos.xy
 
         self.drawbox = pygame.Rect((0,0), drawbox_dim)
         self.drawbox.midbottom = self.pos.xy
 
-        # # Rects and image scaling
-        # pbox = bounding_boxes["player"] # Player boxes
-        # drawbox_wh_ratio = pbox["drawbox"].x/pbox["drawbox"].y # Drawbox width/height ratio
-        # scaled_dim = pygame.Vector2(height*drawbox_wh_ratio, height) # Scale image to these dimensions
-
-        # for tag in self.spritesheet.frames.keys():
-        #     for i, frame in enumerate(self.spritesheet.frames[tag]):
-        #         self.spritesheet.frames[tag][i] = pygame.transform.scale(frame, (int(scaled_dim.x), int(scaled_dim.y)))
-
-        # self.drawbox_scaling = scaled_dim.elementwise()/pbox["drawbox"].elementwise()
-        # self.drawbox = pygame.Rect((0,0), scaled_dim)
-        # self.drawbox.midbottom = self.pos.xy
-
-        # hitbox_scaling = pbox["hitbox"].elementwise()/pbox["drawbox"].elementwise()
-        # hitbox_dim = scaled_dim.elementwise()*hitbox_scaling.elementwise()
-        # self.rect = pygame.Rect((0,0), hitbox_dim)
-        # self.rect.midbottom = self.pos.xy
+        for tag in self.spritesheet.frames.keys():
+            for i, frame in enumerate(self.spritesheet.frames[tag]):
+                self.spritesheet.frames[tag][i] = pygame.transform.scale(frame, (int(drawbox_dim.x), int(drawbox_dim.y)))
 
         # Tags
         self.collisions = {"right":False, "left":False, "top":False, "bottom":False}
@@ -182,22 +164,15 @@ class Player(pygame.sprite.Sprite):
         
   
             """
-            Note to self
-            # Fix previous state so the determination of wheter or not
-            # toggle sprint is on. (max vel should only increase if
-            # running before jumping)
-            # previous state cant be None? 
             # Friction in air should be less than on ground but the amount
             # you can move the character way less.
-            # """
-            #pass
+            """
         
         if self.collisions["bottom"]:
             friction = game_vars["ground_friction"]
         else:
             friction = game_vars["air_resistance"]
 
-        
         if self.state["running"]:
             movement_modifier = game_vars["sprint_multiplier"]
             increase_max_vel = True
@@ -224,19 +199,19 @@ class Player(pygame.sprite.Sprite):
         dt = 1
         self.check_state()
         if self.listener.key_pressed("space", hold=True):
-            if self.collisions["bottom"] == True and self.enable_jump:
+            if self.collisions["bottom"] == True:# and self.enable_jump:
                 self.velocity.y = -game_vars["jump strength"]
-                self.enable_jump = False
-                self.jump_hold_timer.start()
+        #         self.enable_jump = False
+        #         self.jump_hold_timer.start()
 
-            elif self.jump_hold_timer.finished():
-                self.jump_hold_timer.reset()
+        #     elif self.jump_hold_timer.finished():
+        #         self.jump_hold_timer.reset()
 
-            elif self.jump_hold_timer.running:
-                self.velocity.y = -game_vars["jump strength"]
+        #     elif self.jump_hold_timer.running:
+        #         self.velocity.y = -game_vars["jump strength"]
 
-        elif self.listener.key_up("space"):
-            self.jump_hold_timer.reset()
+        # elif self.listener.key_up("space"):
+        #     self.jump_hold_timer.reset()
 
         self.collisions["bottom"] = False
 
@@ -247,7 +222,6 @@ class Player(pygame.sprite.Sprite):
         self.drawbox.bottom = self.pos.y
 
     def limit_velocity(self, max_velocity, increase_vel):
-
         if increase_vel == True: max_velocity *= game_vars["sprint_multiplier"]
         if abs(self.velocity.x) > max_velocity:
             self.velocity.x = max_velocity if self.velocity.x > 0 else -max_velocity 

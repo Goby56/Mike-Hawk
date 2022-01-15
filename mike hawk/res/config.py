@@ -28,7 +28,7 @@ colors = {
 
 game_vars = {
     "gravity": 0.5*_screen_offset,
-    "jump strength": 7*_screen_offset,
+    "jump strength": 8*_screen_offset,
     "speed": 5*_screen_offset,
     "ground_friction": -0.2,
     "air_resistance": -0.075,
