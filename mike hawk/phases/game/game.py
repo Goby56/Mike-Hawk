@@ -50,7 +50,9 @@ class Game(Phase):
         self.camera = Camera(self, canvas)
         self.scroll = pygame.Vector2(0, 0)
 
-        self.test_enemy = Enemy(3, 5)
+        self.enemy_group = pygame.sprite.Group()
+        self.enemy_group.add(Enemy((3, 5)))
+        
 
     def load_map(self, tileset):
         x_list = []
@@ -85,7 +87,7 @@ class Game(Phase):
             print(angle, math.cos(angle), math.sin(angle))
         self.bullets.update(self.scroll, self.tiles)
         Tile.tiles = self.tiles
-        self.test_enemy.update(self.player.pos)
+        self.enemy_group.update(self.player.pos)
 
 
     def render(self):
@@ -96,7 +98,7 @@ class Game(Phase):
         self.player.render()
         self.backbutton.update()
         self.paralax.render(method = "fg")
-        self.test_enemy.render(self.canvas)
+        self.enemy_group.draw(self.canvas)
 
     def get_world_dimensions(self):
         return (len(self.map[0]) * self.tile_size, len(self.map) * self.tile_size)

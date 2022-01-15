@@ -17,7 +17,7 @@ class Enemy(pygame.sprite.Sprite):
         pos = (x*TILES_SIZE, SCREEN_HEIGHT - y*TILES_SIZE)
 
         # essential variables
-        self.rect = pygame.Rect(pos, 1.5*TILES_SIZE, 3*TILES_SIZE)
+        self.rect = pygame.Rect(pos, (1.5*TILES_SIZE, 3*TILES_SIZE))
         self.image = pygame.Surface((1.5*TILES_SIZE, 3*TILES_SIZE))
         self.image.fill(colors["red"])
         self.on_ground = True
@@ -43,16 +43,16 @@ class Enemy(pygame.sprite.Sprite):
 
     @property
     def collisions(self):
-        return pygame.sprite.collide(self, Tile.tiles)
+        return pygame.sprite.spritecollide(self, Tile.tiles, False)
 
     def get_distance(self, player_pos):
         """
         returns distance to players and the direction to the playes (in tiles) # fix so its acctualy in tiles
         """
         x, y = player_pos
-        hyp = (abs(x - self.rect.midx)**2 + abs(y - self.rect.bottom)**2)**0.5
+        hyp = (abs(x - self.rect.centerx)**2 + abs(y - self.rect.bottom)**2)**0.5
         value = hyp // TILES_SIZE
-        return abs(value), (x - self.rect.midx)/abs(x - self.rect.midx)
+        return abs(value), (x - self.rect.centerx)/abs(x - self.rect.centerx)
 
     def update(self, player_pos):
         """
@@ -67,7 +67,7 @@ class Enemy(pygame.sprite.Sprite):
         
         self.on_ground = False
         self.y_collisions()
-        self.rect.y += self.velocity
+        self.rect.y += self.velocity[1]
 
     def move(self):
         """moves towards player"""
@@ -76,7 +76,7 @@ class Enemy(pygame.sprite.Sprite):
         if self.on_ground and not self.jumping:
             self.jump()
 
-        self.rect.x += self.velocity*self.direction
+        self.rect.x += self.velocity[0]*self.direction
 
     def jump(self):
         """jumps"""
