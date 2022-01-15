@@ -41,8 +41,8 @@ game_vars = {
 
 bounding_boxes = {
     "player": {
-        "hitbox":pygame.Vector2(18,22),
-        "drawbox":pygame.Vector2(64,32)
+        "hitbox":pygame.math.Vector2(18,22),
+        "drawbox":pygame.math.Vector2(64,32)
     }
 
 }
