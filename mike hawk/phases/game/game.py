@@ -14,6 +14,7 @@ from res.tileset import load_set
 
 from phases.game.game_res.entities.player import Player
 from phases.game.game_res.entities.bullet import Bullet
+from phases.game.game_res.entities.enemies import Enemy
 
 class Game(Phase):
     """
@@ -49,6 +50,8 @@ class Game(Phase):
         self.camera = Camera(self, canvas)
         self.scroll = pygame.Vector2(0, 0)
 
+        self.test_enemy = Enemy(3, 5)
+
     def load_map(self, tileset):
         x_list = []
         for pos, tile_data in self.map.items():
@@ -82,6 +85,7 @@ class Game(Phase):
             print(angle, math.cos(angle), math.sin(angle))
         self.bullets.update(self.scroll, self.tiles)
         Tile.tiles = self.tiles
+        self.test_enemy.update(self.player.pos)
 
 
     def render(self):
@@ -92,6 +96,7 @@ class Game(Phase):
         self.player.render()
         self.backbutton.update()
         self.paralax.render(method = "fg")
+        self.test_enemy.render(self.canvas)
 
     def get_world_dimensions(self):
         return (len(self.map[0]) * self.tile_size, len(self.map) * self.tile_size)
