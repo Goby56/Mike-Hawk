@@ -6,7 +6,7 @@ PLAYER_SPEED = 10
 TERMINAL_VELOCITY = 100
 MAX_Y = 256
 
-import ctypes
+import ctypes, pygame, os
 SCREENSIZE = ctypes.windll.user32.GetSystemMetrics(0), ctypes.windll.user32.GetSystemMetrics(1)
 SCREEN_WIDTH, SCREEN_HEIGHT = SCREENSIZE
 #SCREENSIZE = 400, 200
@@ -39,10 +39,17 @@ game_vars = {
     "crouch_slowdown": 0.5
 }
 
+bounding_boxes = {
+    "player": {
+        "hitbox":pygame.Vector2(18,22),
+        "drawbox":pygame.Vector2(64,32)
+    }
+
+}
+
 
 
 # LOAD RESOURCES
-import pygame, os
 
 SCREEN_RECT = pygame.Rect((0, 0), SCREENSIZE)
 PYGAME_CAPS_KEYS = {
@@ -54,24 +61,22 @@ PYGAME_CAPS_KEYS = {
 }
 
 _base_dir = os.path.abspath(os.path.dirname(__file__))
-sprite_dir = os.path.join(_base_dir, "assets", "spritesheets")
+spritesheet_dir = os.path.join(_base_dir, "assets", "spritesheets")
 _menu_dir = os.path.join(_base_dir, "assets", "menu", "MenuButton.png")
 menubutton = pygame.image.load(_menu_dir)
 
 # Loading sprites
 from .spritesheet import Spritesheet
 
-def load_frames(filename):
-    spritesheet = Spritesheet(filename) # Create object of file path
-    data = spritesheet.parse_sprite() # Get meta data from sheet
-    frames = spritesheet.get_frames(data) # Get sequence of frames
-    return frames
+def load_frames(filename, tag=None):
+    if tag == None:
+        tag = filename
+    spritesheet = Spritesheet(filename)
+    return spritesheet.get_frames(tag)
 
 dynamite_frames = load_frames("dynamite")
-tile_frames = load_frames("dev_tiles")
-tile_frames_bg = load_frames("dev_tiles_bg")
 paralax_layers = load_frames("desertdemo")
-player_animations = load_frames("player_walk")
+player_animations = load_frames("demo_hawk", "walking")
 editor_buttons = load_frames("editor_buttons")
 spawn_image = pygame.image.load(
         os.path.join(_base_dir, "assets", "editor", "spawn_point.png")
