@@ -32,7 +32,7 @@ class Enemy(pygame.sprite.Sprite):
         self.crit_bonus = 1.2 # 20% of damage
 
         # movement
-        self.speed = 5
+        self.speed = 3
         self.jump_height = 2 # tiles
         self.jump_force = 10
 
@@ -50,15 +50,18 @@ class Enemy(pygame.sprite.Sprite):
         returns distance to players and the direction to the playes (in tiles) # fix so its acctualy in tiles
         """
         x, y = player_pos
-        hyp = (abs(x - self.rect.centerx)**2 + abs(y - self.rect.bottom)**2)**0.5
-        value = hyp // TILES_SIZE
-        return abs(value), (x - self.rect.centerx)/abs(x - self.rect.centerx)
+        dx = x - self.rect.centerx
+        distance = (abs(dx)**2 + abs(y - self.rect.bottom)**2)**0.5
+        distance_tiles = distance // TILES_SIZE
+        direction = dx/abs(dx) if dx != 0 else 0
+        return distance_tiles, direction
 
-    def update(self, player_pos):
+    def update(self, player_pos, scroll):
         """
         player_pos: player position
         """
-        self.player_pos = player_pos
+        x, y = player_pos
+        self.player_pos = (x-scroll.x, y-scroll.y)
         self.distance, self.direction = self.get_distance(self.player_pos) # distance to player
         self.velocity[1] = game_vars["gravity"]
 
@@ -72,10 +75,10 @@ class Enemy(pygame.sprite.Sprite):
     def move(self):
         """moves towards player"""
         self.velocity[0] = self.speed
-        self.x_collisions()
-        if self.on_ground and not self.jumping:
+        if self.x_collisions() and self.on_ground and not self.jumping:
             self.jump()
 
+        print(self.velocity)
         self.rect.x += self.velocity[0]*self.direction
 
     def jump(self):
@@ -89,6 +92,10 @@ class Enemy(pygame.sprite.Sprite):
             elif self.direction < 0:
                 self.rect.left = tile.rect.right
             self.velocity[0] = 0
+
+        if len(self.collisions): return True
+        return False
+        
 
     def y_collisions(self):
         for tile in self.collisions:
