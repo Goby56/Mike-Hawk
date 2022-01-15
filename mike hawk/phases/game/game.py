@@ -41,7 +41,7 @@ class Game(Phase):
         self.load_map(tileset)
         self.paralax = Paralax(canvas, paralax_layers)
 
-        player_height = int(self.tile_size*2)
+        player_height = int(self.tile_size*game_vars["player_height"])
         spawn_x, spawn_y = self.level["spawn"]
         self.player = Player(listener, canvas, (spawn_x*self.tile_size, spawn_y*self.tile_size), player_height)
         
