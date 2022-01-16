@@ -78,12 +78,12 @@ class Enemy(pygame.sprite.Sprite):
         if self.x_collisions() and self.on_ground and not self.jumping:
             self.jump()
 
-        print(self.velocity)
+        #print(self.velocity)
         self.rect.x += self.velocity[0]*self.direction
 
     def jump(self):
         """jumps"""
-        print("jump")
+        #print("jump")
 
     def x_collisions(self):
         for tile in self.collisions:

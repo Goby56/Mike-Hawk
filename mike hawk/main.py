@@ -30,7 +30,7 @@ class Main:
             timer.increment(self.dt)
             
         for instance in Animator.instances:
-            instance.update(self.dt)
+            instance.increment(self.dt)
         
         current_phase = Phase.get_current()
         current_phase.update(self.dt)

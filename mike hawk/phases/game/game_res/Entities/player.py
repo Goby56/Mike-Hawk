@@ -1,6 +1,6 @@
 import pygame, sys, os
 sys.path.append("..")
-from res.config import spritesheet_dir, game_vars, player_animations, bounding_boxes, colors
+from res.config import spritesheet_dir, game_vars, player_animations, bounding_boxes, colors, fps, debug
 from res.animator import Animator
 from res.timers import Timer
 from res.spritesheet import Spritesheet
@@ -43,21 +43,24 @@ class Player(pygame.sprite.Sprite):
         # Tags
         self.collisions = {"right":False, "left":False, "top":False, "bottom":False}
         self.state = {
-            "idle":False, "walking":False, "running":False, 
-            "jump":False, "jumping":False, "falling":False}
-        self.animation_state = {
-            "idle":False, "running":False, "rolling":False, 
-            "whip_slash":False, "whip_stun":False, "fire_pistol":False, "death":False,
-            "falling":False, "jump":False, "jumping":False
+            "idle":False, "running":False, "jumping":False, "falling":False, 
+            "rolling":False, "death":False
             }
-        self.previous_state = None
+        self.animation_state = {
+            "rolling":False, "death":False, "jump":False,
+            "whip_slash":False, "whip_stun":False, "fire_pistol":False
+            } # Animations that should play all the way through
+        self.previous_state = self.state.copy()
         self.state_history = []
         self.facing = {"left":False, "right":True}
-        self.enable_jump = False
+        self.fell_from_height = 0
         
         # Timers
         self.idle_timer = Timer("down", "ticks", 2)
-        self.jump_hold_timer = Timer("down", "ticks", 15)
+        rolling_animation_duration = sum(self.animator.animation_delays["rolling"])-1
+        self.rolling_animation_timer = Timer("down", "ticks", rolling_animation_duration)
+        death_animation_duration = sum(self.animator.animation_delays["death"])
+        self.death_animation_timer = Timer("down", "ticks", death_animation_duration)
 
         # Other
         self.acceleration = pygame.Vector2(0, game_vars["gravity"])
@@ -72,46 +75,14 @@ class Player(pygame.sprite.Sprite):
     def abs_y(self):
         return self.pos.y - self.scroll_offset.y
 
-    def set_state(self, state, bool=True):
-        for key in self.state.keys():
-            self.state[key] = False
-        if state != None:
-            self.state[state] = bool
-
-    def check_state(self, debug=False):
-        if not debug:
-            self.previous_state = self.state.copy()
-
-            if self.velocity.x != 0 and self.collisions["bottom"]:
-                if self.listener.key_pressed("left shift", hold=True):
-                    self.set_state("running")
-                else:
-                    self.set_state("walking")
-            else:
-                self.set_state(None)
-
-            if self.velocity.y < 0:
-                self.set_state("jumping")
-            elif self.velocity.y > game_vars["gravity"]:
-                self.set_state("falling")
-
-            if self.find_true(self.state) != self.find_true(self.previous_state):
-                for key, value in self.state.items():
-                    if value == True:
-                        self.state_history.append(key)
-                if len(self.state_history) > 4:
-                    self.state_history.pop(0)
-
-        if debug:
-            state = self.find_true(self.state)
-            if state != None:
-                print(state, " : ", self.state_history)
-                pass
+    @property
+    def fall_distance(self):
+        return -(self.abs_y-self.fell_from_height)/game_vars["tile_size"]
 
     def update(self, dt, collisions_objects, scroll):
-
-        self.check_idle()
         self.check_state()
+        self.check_idle()
+        self.check_state(True)
 
         self.horizontal_movement(dt)
         self.handle_collisions(self.get_collisions(collisions_objects), axis=0)
@@ -126,23 +97,124 @@ class Player(pygame.sprite.Sprite):
         self.drawbox.midbottom = self.pos.xy
 
     def render(self):
-        if abs(self.velocity.x) > game_vars["max_vel"]*0.25:
+        history = self.state_history[::-1]
+        if self.state["running"] and abs(self.velocity.x) > 0.25*game_vars["max_vel"]:
             frame = self.animator.get_frame("running")
-            if self.velocity.x < 0:
-                frame = pygame.transform.flip(frame, True, False)
+        elif self.state["jumping"]:
+            frame = self.animator.get_frame("jumping")
+        elif self.state["falling"]:
+            frame = self.animator.get_frame("falling")
+        elif len(history) >= 2 and self.find_true(self.state) == None and history[0] == "jumping":
+            frame = self.animator.get_frame("jumping")
+        elif len(history) >= 2 and self.find_true(self.state) == None and history[0] == "falling":
+            frame = self.animator.get_frame("running")
+        elif self.state["rolling"]:
+            time = self.rolling_animation_timer.get_time()
+            frame = self.animator.get_frame("rolling")
+        elif self.state["death"]:
+            frame = self.animator.get_frame("death")
         else:
             frame = self.animator.get_frame("idle")
-            if self.facing["left"]:
-                frame = pygame.transform.flip(frame, True, False)
+
+        if self.velocity.x < -game_vars["max_vel"]*0.25 or self.facing["left"]:
+            frame = pygame.transform.flip(frame, True, False)
+        
         self.canvas.blit(frame, self.drawbox.topleft)
 
         pygame.draw.rect(self.canvas, colors["cool blue"], self.drawbox, width=1)
         pygame.draw.rect(self.canvas, colors["red"], self.rect, width=1)
 
+    def set_state(self, state, bool=True, animation=False):
+        """
+        Sets all states to false, then {state} to true
+        Can set the given {state} to false if {bool}=False
+        If {animation}=True the given {state} will become true in the {self.animation_state}
+        """
+        if animation:
+            for key in self.animation_state.keys():
+                self.animation_state[key] = False
+            if state != None:
+                self.animation_state[state] = bool
+        else:
+            for key in self.state.keys():
+                self.state[key] = False
+            if state != None:
+                self.state[state] = bool
+
+    def check_state(self, debug=False):
+        if not debug:
+            self.previous_state = self.state.copy()
+
+            if self.rolling_animation_timer.finished():
+                self.set_state("rolling", bool=False, animation=True)
+                self.set_state("rolling", bool=False)
+                self.rolling_animation_timer.reset()
+            
+            if self.death_animation_timer.finished():
+                self.set_state("death", bool=False, animation=True)
+                self.set_state("death", bool=False)
+                self.rolling_animation_timer.reset()
+
+            if self.animation_state["rolling"]:
+                self.set_state("rolling")
+            elif self.animation_state["death"]:
+                self.set_state("death")
+            elif self.collisions["bottom"] and (self.state["falling"] or self.previous_state["falling"]):
+                rolling_fall_range = range(game_vars["fall_ranges"][0], game_vars["fall_ranges"][1])
+                if int(self.fall_distance) in rolling_fall_range:
+                    self.set_state("rolling")
+                    self.set_state("rolling", animation=True)
+                    self.rolling_animation_timer.start()
+                elif int(self.fall_distance) >= max(rolling_fall_range):
+                    self.set_state("death")
+                    self.set_state("death", animation=True)
+                    self.death_animation_timer.start()
+                    self.death_animation_timer.start()
+                else:
+                    self.set_state(None)
+            elif self.collisions["bottom"] and self.velocity.x != 0:
+                self.set_state("running")
+            elif self.velocity.y < 0:
+                self.set_state("jumping")
+            elif self.velocity.y > 0:
+                self.set_state("falling")
+            else:
+                self.set_state(None)
+
+            if self.find_true(self.state) != self.find_true(self.previous_state):
+                if self.state["falling"]:
+                    self.fell_from_height = self.abs_y
+                for key, value in self.state.items():
+                    if value == True:
+                        self.state_history.append(key)
+                if len(self.state_history) > 4:
+                    self.state_history.pop(0)
+
+        if debug:
+            state = self.find_true(self.state)
+            if state != None:
+                print(state, " : ", self.state_history)
+                pass
+
+    def check_idle(self):
+        if not any(self.state.values()):
+            self.idle_timer.start()
+        else:
+            self.idle_timer.reset()
+
+        if self.idle_timer.finished() and self.collisions["bottom"]:
+            self.set_state("idle")
+            self.idle_timer.reset()
+            try:
+                if self.state_history[-1] != "idle":
+                    self.state_history.append("idle")
+            except IndexError:
+                pass
+
     def horizontal_movement(self, dt):
-        dt *= 60
-        dt = 1
-        self.check_state()
+        if debug:
+            dt = 1
+        else: dt *= fps
 
         key_a = self.listener.key_pressed("a", hold=True)
         key_d = self.listener.key_pressed("d", hold=True)
@@ -151,12 +223,13 @@ class Player(pygame.sprite.Sprite):
             self.facing["left"], self.facing["right"] = False, True 
         if direction == -1:
             self.facing["left"], self.facing["right"] = True, False
+
+        if self.state["rolling"]:
+            if self.facing["right"]:
+                direction = 0.15
+            elif self.facing["left"]:
+                direction = -0.15
     
-        if self.collisions["bottom"]:
-            if abs(self.velocity.x) > 0:
-                self.set_state("running")
-        
-  
             """
             # Friction in air should be less than on ground but the amount
             # you can move the character way less.
@@ -176,23 +249,12 @@ class Player(pygame.sprite.Sprite):
         self.drawbox.centerx = self.pos.x
 
     def vertical_movement(self, dt):
-        dt *= 60
-        dt = 1
-        self.check_state()
-        if self.listener.key_pressed("space", hold=True):
-            if self.collisions["bottom"] == True:# and self.enable_jump:
-                self.velocity.y = -game_vars["jump strength"]
-        #         self.enable_jump = False
-        #         self.jump_hold_timer.start()
+        if debug:
+            dt = 1
+        else: dt *= fps
 
-        #     elif self.jump_hold_timer.finished():
-        #         self.jump_hold_timer.reset()
-
-        #     elif self.jump_hold_timer.running:
-        #         self.velocity.y = -game_vars["jump strength"]
-
-        # elif self.listener.key_up("space"):
-        #     self.jump_hold_timer.reset()
+        if self.listener.key_pressed("space", hold=True) and self.collisions["bottom"]:
+            self.velocity.y = -game_vars["jump strength"]
 
         self.collisions["bottom"] = False
 
@@ -207,22 +269,6 @@ class Player(pygame.sprite.Sprite):
         if abs(self.velocity.x) > max_velocity:
             self.velocity.x = max_velocity if self.velocity.x > 0 else -max_velocity 
         if abs(self.velocity.x) < 0.1: self.velocity.x = 0
-
-    def check_idle(self):
-        if not any(self.state.values()):
-            self.idle_timer.start()
-        else:
-            self.idle_timer.reset()
-
-        if self.idle_timer.finished() and self.collisions["bottom"]:
-            self.set_state("idle")
-            self.idle_timer.reset()
-            try:
-                if self.state_history[-1] != "idle":
-                    self.state_history.append("idle")
-            except IndexError:
-                pass
-
     
     def handle_collisions(self, tile_collisions, axis):
         if tile_collisions:
@@ -241,7 +287,6 @@ class Player(pygame.sprite.Sprite):
                         self.rect.bottom = tile.rect.top
                         self.velocity.y = 0
                         self.collisions["bottom"] = True
-                        self.enable_jump = True
                     elif self.velocity.y < 0: 
                         self.rect.top = tile.rect.bottom
                         self.velocity.y = 0
@@ -257,3 +302,4 @@ class Player(pygame.sprite.Sprite):
         for key, value in dictionary.items():
             if value == True:
                 return key
+        return None

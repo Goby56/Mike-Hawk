@@ -87,7 +87,7 @@ class Game(Phase):
             print(angle, math.cos(angle), math.sin(angle))
         self.bullets.update(self.scroll, self.tiles)
         Tile.tiles = self.tiles
-        self.enemy_group.update(self.player.pos)
+        self.enemy_group.update(self.player.pos, self.scroll)
 
 
     def render(self):
@@ -127,8 +127,8 @@ class Game(Phase):
             else:
                 trigger.player_in_trigger = False
 
-    def kill(self):
-        print("killed player")  
+    def kill(self, sprite, cause):
+        sprite.kill(cause)
 
 # Return the angle between two points
 def get_angle(pos1, pos2):
