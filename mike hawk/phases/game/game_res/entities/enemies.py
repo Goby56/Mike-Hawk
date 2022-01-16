@@ -73,7 +73,7 @@ class Enemy(pygame.sprite.Sprite):
         self.y_collisions()
         self.rect.y += self.velocity[1]
 
-        print(self.velocity, self.direction)
+        #print(self.velocity, self.direction)
 
         # self.rect.x -= self.scroll.x
         # self.rect.y -= self.scroll.y

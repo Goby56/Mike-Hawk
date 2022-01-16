@@ -153,30 +153,32 @@ class Player(pygame.sprite.Sprite):
             if self.death_animation_timer.finished():
                 self.set_state("death", bool=False, animation=True)
                 self.set_state("death", bool=False)
-                self.rolling_animation_timer.reset()
+                self.death_animation_timer.reset()
 
-            if self.animation_state["rolling"]:
-                self.set_state("rolling")
-            elif self.animation_state["death"]:
-                self.set_state("death")
-            elif self.collisions["bottom"] and (self.state["falling"] or self.previous_state["falling"]):
+            if self.collisions["bottom"] and (self.state["falling"] or self.previous_state["falling"]):
                 rolling_fall_range = range(game_vars["fall_ranges"][0], game_vars["fall_ranges"][1])
                 if int(self.fall_distance) in rolling_fall_range:
                     self.set_state("rolling")
                     self.set_state("rolling", animation=True)
                     self.rolling_animation_timer.start()
                 elif int(self.fall_distance) >= max(rolling_fall_range):
+                    self.set_state("rolling", bool=False)
+                    self.set_state("rolling", bool=False, animation=True)
+                    self.rolling_animation_timer.reset()
                     self.set_state("death")
                     self.set_state("death", animation=True)
                     self.death_animation_timer.start()
-                    self.death_animation_timer.start()
                 else:
                     self.set_state(None)
+            if self.animation_state["rolling"]:
+                self.set_state("rolling")
+            elif self.animation_state["death"]:
+                self.set_state("death")
             elif self.collisions["bottom"] and self.velocity.x != 0:
                 self.set_state("running")
             elif self.velocity.y < 0:
                 self.set_state("jumping")
-            elif self.velocity.y > 0:
+            elif self.velocity.y > game_vars["gravity"]:
                 self.set_state("falling")
             else:
                 self.set_state(None)
@@ -218,11 +220,16 @@ class Player(pygame.sprite.Sprite):
 
         key_a = self.listener.key_pressed("a", hold=True)
         key_d = self.listener.key_pressed("d", hold=True)
+
         direction = key_d - key_a
         if direction == 1:
             self.facing["left"], self.facing["right"] = False, True 
         if direction == -1:
             self.facing["left"], self.facing["right"] = True, False
+
+        if self.listener.key_pressed("left alt", hold=True):
+            self.set_state("rolling", animation=True)
+            self.rolling_animation_timer.start()
 
         if self.state["rolling"]:
             if self.facing["right"]:

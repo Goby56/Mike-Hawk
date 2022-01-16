@@ -12,7 +12,7 @@ SCREEN_WIDTH, SCREEN_HEIGHT = SCREENSIZE
 #SCREENSIZE = 400, 200
 print(SCREENSIZE)
 fps = 60
-debug = False
+debug = True
 _screen_offset = SCREEN_WIDTH / 1280
 
 
