@@ -414,6 +414,16 @@ class Trigger:
         canvas.blit(surf, (self.x*dim+x_offset, SCREENSIZE[1]-(MAX_Y-self.y)*dim+y_offset, dim, dim))
 
 
+class SpawnPoint:
+    def __init__(self, pos, types=["Enemy"]):
+        self.x, self.y = pos
+        
+        self.dict = {
+            "pos": pos,
+            "types": types
+        }
+
+
 class Selection:
     def __init__(self, mouse, size):
         self.start_pos = mouse
