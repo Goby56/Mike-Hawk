@@ -9,7 +9,7 @@ from phases.game.game import Game
 
 pygame.font.init()
 
-class Main:
+class Main: #Mike Hawk's Jungle adventure
     def __init__(self):
         self._display = pygame.display.set_mode(SCREENSIZE, pygame.FULLSCREEN)
         self._clock = pygame.time.Clock()

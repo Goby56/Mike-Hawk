@@ -77,7 +77,7 @@ def load_frames(filename, tag=None):
     return spritesheet.get_frames(tag)
 
 dynamite_frames = load_frames("dynamite")
-paralax_layers = load_frames("desertdemo")
+paralax_layers = load_frames("moody_jungle")
 player_animations = load_frames("demo_hawk", "walking")
 editor_buttons = load_frames("editor_buttons")
 spawn_image = pygame.image.load(
