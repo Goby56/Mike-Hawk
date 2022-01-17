@@ -1,7 +1,7 @@
 import pygame, sys
 sys.path.append("..")
 
-from res.config import game_vars, colors, SCREEN_HEIGHT
+from res.config import game_vars, colors, MAX_Y
 from phases.game.game_res.map import Tile
 
 TILES_SIZE = game_vars["tile_size"]
@@ -14,7 +14,7 @@ class Enemy(pygame.sprite.Sprite):
         super().__init__()
 
         x, y = pos
-        pos = (x*TILES_SIZE, SCREEN_HEIGHT - y*TILES_SIZE)
+        pos = (x*TILES_SIZE, (MAX_Y - y)*TILES_SIZE)
 
         # essential variables
         self.rect = pygame.Rect(pos, (1.5*TILES_SIZE, 3*TILES_SIZE))
@@ -23,9 +23,11 @@ class Enemy(pygame.sprite.Sprite):
         self.on_ground = True
         self.jumping = False
         self.velocity = [0, 0]
+        self.scroll = pygame.Vector2(0, 0)
+
 
         # general stats
-        self.agro_distance = 20 # tiles
+        self.agro_distance = 7 # tiles
         self.attack_range = 2 # tiles
         self.health = 100
         self.damage = 10
@@ -64,7 +66,7 @@ class Enemy(pygame.sprite.Sprite):
         self.player_pos = player_pos
         self.scroll = scroll
         self.distance, self.direction = self.get_distance(self.player_pos) # distance to player
-        self.velocity[1] = 5#game_vars["gravity"]
+        self.velocity[1] = game_vars["gravity"]
 
         if self.engaged and self.distance >= self.attack_range:
             self.move()
@@ -73,17 +75,14 @@ class Enemy(pygame.sprite.Sprite):
         self.y_collisions()
         self.rect.y += self.velocity[1]
 
-        print(self.velocity, self.direction)
-
-        # self.rect.x -= self.scroll.x
-        # self.rect.y -= self.scroll.y
+        self.rect.x -= self.scroll.x
+        self.rect.y -= self.scroll.y
 
     def move(self):
         """moves towards player"""
         self.velocity[0] = self.speed
         if self.x_collisions() and self.on_ground and not self.jumping:
             self.jump()
-
 
         self.rect.x += self.velocity[0]*self.direction
 
@@ -104,9 +103,9 @@ class Enemy(pygame.sprite.Sprite):
 
     def y_collisions(self):
         for tile in self.collisions:
-            if self.jumping:
+            if self.velocity[1] < 0:
                 self.rect.top = tile.rect.bottom
-            else:
+            elif self.velocity[1] > 0:
                 self.rect.bottom = tile.rect.top
                 self.on_ground = True
             self.velocity[1] = 0
