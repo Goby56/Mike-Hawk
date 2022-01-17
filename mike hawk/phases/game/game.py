@@ -5,7 +5,6 @@ from phases.game.game_res.camera import Camera, Paralax
 from phases.game.game_res.map import Tile, Trigger, TriggerType
 
 from phases.phase import Phase
-from res.widgets import MenuButton
 
 import json, os
 from res.config import _base_dir, spritesheet_dir, game_vars, paralax_layers, colors, bounding_boxes
@@ -23,8 +22,6 @@ class Game(Phase):
         self.canvas = canvas
         self.listener = listener
         
-        self.backbutton = MenuButton(canvas, listener, (100, 150), "Back",
-            command=self.exit_phase)
         self.tiles = pygame.sprite.Group()
         self.other_tiles = pygame.sprite.Group()
         self.triggers = pygame.sprite.Group()
@@ -96,7 +93,6 @@ class Game(Phase):
         self.other_tiles.draw(self.canvas)
         self.bullets.draw(self.canvas)
         self.player.render()
-        self.backbutton.update()
         self.paralax.render(method = "fg")
         self.enemy_group.draw(self.canvas)
 
