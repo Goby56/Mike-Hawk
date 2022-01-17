@@ -1,16 +1,17 @@
+from re import A
 import pygame, sys
 sys.path.append("..")
 
 from phases.phase import Phase
 from phases.game.game import Game
 from res.widgets import MenuButton, MenuButtonPanel
-from res.config import dynamite_frames, SCREEN_RECT
+from res.config import dynamite_frames, SCREEN_RECT, SCREENSIZE
 
 class MainMenu(Phase):
     def __init__(self, canvas, listener):
         self.canvas, self.listener = canvas, listener
 
-        self.buttonpanel = MenuButtonPanel(canvas, listener, (200, 100), 3, 20, ["New Phase", "Options", "Quit"],
+        self.buttonpanel = MenuButtonPanel(canvas, listener, (SCREENSIZE[0]/2-(MenuButton.rect.width*1.5), SCREENSIZE[1]/5), 3, 100, ["New Phase", "Options", "Quit"],
             [lambda: MapMenu(canvas, listener).enter_phase(), lambda: OptionsMenu(canvas, listener).enter_phase(), quit])
 
         self.counter = 0
@@ -32,8 +33,8 @@ class MapMenu(Phase):
         gober = lambda: Game(canvas, listener, "gober").enter_phase()
         minecraft = lambda: Game(canvas, listener, "minecraft").enter_phase()
         minecraft2 = lambda: Game(canvas, listener, "minecraft2").enter_phase()
-        self.buttonpanel = MenuButtonPanel(canvas, listener, (200, 100), 6, 20, 
-            ["gober", "minecraft", "minecraft2", "Map 3", "Map 4", "Back"],
+        self.buttonpanel = MenuButtonPanel(canvas, listener, (SCREEN_RECT.width/2-MenuButton.rect.width*1.5, SCREEN_RECT.height/5), 6, 100, 
+            ["Gober", "Minecraft", "Minecraft2", "Map 3", "Map 4", "Back"],
             [gober, minecraft, minecraft2, 
             lambda: print("Map 3"), lambda: print("Map 4"), self.exit_phase]
         )
@@ -41,12 +42,21 @@ class MapMenu(Phase):
     def update(self, *args, **kwargs):
         self.buttonpanel.update()
 
+class GameMenu(Phase):
+    def __init__(self, canvas, listener):
+        self.canvas, self.listener = canvas, listener
+
+        self.buttonpanel = MenuButtonPanel(canvas, listener, (SCREEN_RECT.width/2-MenuButton.rect.width*1.5, SCREEN_RECT.height/5), 3, 100, 
+            ["Return", "Options", "Main Menu"], [self.exit_phase, lambda: OptionsMenu(canvas, listener).enter_phase(), lambda: self.exit_phase(amount=2)])
+
+    def update(self, *args, **kwargs):
+        self.buttonpanel.update()
 
 class OptionsMenu(Phase):
     def __init__(self, canvas, listener):
         self.canvas, self.listener = canvas, listener
 
-        self.backbutton = MenuButton(canvas, listener, (100, 300), "Back", command=self.exit_phase)
+        self.backbutton = MenuButton(canvas, listener, (SCREEN_RECT.width/2-MenuButton.rect.width*1.5, SCREEN_RECT.height/5), "Back", command=self.exit_phase)
 
     def update(self, *args, **kwargs):
         self.backbutton.update()
