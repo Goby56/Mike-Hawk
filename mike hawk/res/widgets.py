@@ -6,12 +6,16 @@ class MenuButton:
     rect = menubutton.get_rect()
     def __init__(self, surface, listener, pos, text, command=None):
         self._surface = surface
+        self.orig_rect = menubutton.get_rect()
         self._image = menubutton.copy()
         self._command = command
         self._text = text
         self._listener = listener
+        self.scale = 3
 
-        font = pygame.font.SysFont("Ariel", 20)
+        self._image = pygame.transform.scale(self._image, (self.scale*self.orig_rect.width, self.scale*self.orig_rect.height))
+
+        font = pygame.font.SysFont("Ariel", 60)
         font_surf = font.render(self._text, False, colors["white knight"])
         img_center, font_center = self._image.get_rect().center, font_surf.get_rect().center
         center = (img_center[0] - font_center[0], img_center[1] - font_center[1])
