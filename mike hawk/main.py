@@ -4,7 +4,8 @@ from res.config import *
 from res.animator import Animator
 from res.timers import Timer
 from phases.phase import Phase
-from phases.menu import MainMenu
+from phases.menu import MainMenu, GameMenu
+from phases.game.game import Game
 
 pygame.font.init()
 
@@ -23,7 +24,6 @@ class Main:
         self.listener.listen()
 
         self.listener.on_event("quit", quit)
-        self.listener.on_key("escape", quit)
 
         self.get_dt()
         for timer in Timer.timers:
@@ -35,6 +35,9 @@ class Main:
         current_phase = Phase.get_current()
         current_phase.update(self.dt)
         current_phase.render()
+
+        if isinstance(current_phase, Game):
+            self.listener.on_key("escape", lambda: GameMenu(self.canvas, self.listener).enter_phase())
 
         self._display.blit(self.canvas, (0, 0))
         pygame.display.update()
