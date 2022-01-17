@@ -111,34 +111,19 @@ class Enemy(pygame.sprite.Sprite):
             self.velocity[1] = 0
 
 
-    def hurt(self, amount) -> bool:
+    def sleep(self):
         """
-        should be called when player attacks
-        returns True if killed, else False
+        called when hit by bullet
         """
-        self.health -= amount
-        if self.health <= 0:
-            self.kill()
-            return True
-        return False
 
-    def kill(self):
-        """called when killed. May drop things"""
+    def knockback(self):
+        """
+        called when hit with knockback attack
+        """
 
+    def stun(self):
+        """
+        called when hit with stun attack
+        """
+        
 
-class RangedEnemy(Enemy):
-    def __init__(self, pos):
-        super().__init__(pos)
-
-
-class SuicideBomber(Enemy):
-    def __init__(self, pos):
-        super().__init__(pos)
-        self.attack_range = 1
-        self.damage = 10000
-
-    def attack(self):
-        self.kill()
-
-    def update(self, player_pos):
-        super().update(player_pos)
