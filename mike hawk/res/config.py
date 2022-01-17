@@ -12,6 +12,7 @@ SCREEN_WIDTH, SCREEN_HEIGHT = SCREENSIZE
 #SCREENSIZE = 400, 200
 print(SCREENSIZE)
 fps = 60
+debug = True
 _screen_offset = SCREEN_WIDTH / 1280
 
 
@@ -37,7 +38,8 @@ game_vars = {
     "sprint_multiplier": 1.5,
     "jump_amplifier": 1.5,
     "crouch_slowdown": 0.5,
-    "player_height": 2
+    "player_height": 2,
+    "fall_ranges":[4,10,20] # dy<4:nothing, 4<dy<10:rolling, 10<dy<20:unconscious, dy>20:dead
 }
 
 bounding_boxes = {

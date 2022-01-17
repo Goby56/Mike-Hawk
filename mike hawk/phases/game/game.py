@@ -125,8 +125,8 @@ class Game(Phase):
             else:
                 trigger.player_in_trigger = False
 
-    def kill(self):
-        print("killed player")  
+    def kill(self, sprite, cause):
+        sprite.kill(cause)
 
 # Return the angle between two points
 def get_angle(pos1, pos2):
