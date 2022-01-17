@@ -71,18 +71,20 @@ class Game(Phase):
 
     def update(self, dt, *args, **kwargs):
         self.scroll = self.camera.get_offset()
-        self.player.update(dt, self.tiles, self.scroll)
+        self.player.update(dt, self.tiles, self.bullets, self.scroll)
         self.limit_player()
         self.other_tiles.update(self.scroll)
         self.tiles.update(self.scroll)
         self.triggers.update(self.scroll)
         self.update_triggers()
         self.paralax.update(self.scroll)
+        
         #print(get_angle(pygame.mouse.get_pos(), self.player.rect.center))
-        if self.listener.mouse_clicked(1, hold=True, trigger=20, id="player_shoot_bullet_1"):
-            angle = get_angle(pygame.mouse.get_pos(), self.player.rect.center)
-            self.bullets.add(Bullet(self.player.rect.center, angle, 20)) # player.current weapon
-            print(angle, math.cos(angle), math.sin(angle))
+        # if self.listener.mouse_clicked(1, hold=True, trigger=20, id="player_shoot_bullet_1"):
+        #     angle = get_angle(pygame.mouse.get_pos(), self.player.rect.center)
+        #     self.bullets.add(Bullet(self.player.rect.center, angle, 20)) # player.current weapon
+        #     print(angle, math.cos(angle), math.sin(angle))
+
         self.bullets.update(self.scroll, self.tiles)
         Tile.tiles = self.tiles
         self.enemy_group.update(self.player.pos, self.scroll)

@@ -167,14 +167,6 @@
     "sourceSize": { "w": 64, "h": 32 },
     "duration": 100
    },
-   "rolling 5": {
-    "frame": { "x": 0, "y": 0, "w": 64, "h": 32 },
-    "rotated": false,
-    "trimmed": false,
-    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 32 },
-    "sourceSize": { "w": 64, "h": 32 },
-    "duration": 100
-   },
    "whip_slash 0": {
     "frame": { "x": 128, "y": 64, "w": 64, "h": 32 },
     "rotated": false,
@@ -450,14 +442,14 @@
   "frameTags": [
    { "name": "idle", "from": 0, "to": 7, "direction": "forward", "color": "#000000ff" },
    { "name": "running", "from": 8, "to": 15, "direction": "forward", "color": "#000000ff" },
-   { "name": "rolling", "from": 16, "to": 21, "direction": "forward", "color": "#000000ff" },
-   { "name": "whip_slash", "from": 22, "to": 27, "direction": "forward", "color": "#000000ff" },
-   { "name": "whip_stun", "from": 28, "to": 35, "direction": "forward", "color": "#000000ff" },
-   { "name": "fire_pistol", "from": 36, "to": 39, "direction": "forward", "color": "#000000ff" },
-   { "name": "death", "from": 40, "to": 44, "direction": "forward", "color": "#000000ff" },
-   { "name": "falling", "from": 45, "to": 48, "direction": "forward", "color": "#000000ff" },
-   { "name": "jump", "from": 49, "to": 52, "direction": "forward", "color": "#000000ff" },
-   { "name": "jumping", "from": 53, "to": 54, "direction": "forward", "color": "#000000ff" }
+   { "name": "rolling", "from": 16, "to": 20, "direction": "forward", "color": "#000000ff" },
+   { "name": "whip_slash", "from": 21, "to": 26, "direction": "forward", "color": "#000000ff" },
+   { "name": "whip_stun", "from": 27, "to": 34, "direction": "forward", "color": "#000000ff" },
+   { "name": "fire_pistol", "from": 35, "to": 38, "direction": "forward", "color": "#000000ff" },
+   { "name": "death", "from": 39, "to": 43, "direction": "forward", "color": "#000000ff" },
+   { "name": "falling", "from": 44, "to": 47, "direction": "forward", "color": "#000000ff" },
+   { "name": "jump", "from": 48, "to": 51, "direction": "forward", "color": "#000000ff" },
+   { "name": "jumping", "from": 52, "to": 53, "direction": "forward", "color": "#000000ff" }
   ],
   "layers": [
    { "name": "Sprite Sheet", "opacity": 255, "blendMode": "normal" }

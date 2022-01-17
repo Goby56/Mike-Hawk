@@ -1,9 +1,10 @@
-import pygame, sys, os
+import pygame, sys, os, math
 sys.path.append("..")
 from res.config import spritesheet_dir, game_vars, player_animations, bounding_boxes, colors, fps, debug
 from res.animator import Animator
 from res.timers import Timer
 from res.spritesheet import Spritesheet
+from .bullet import Bullet
 
 
 class Player(pygame.sprite.Sprite):
@@ -25,16 +26,22 @@ class Player(pygame.sprite.Sprite):
         # Rects and image scaling
         pbox = bounding_boxes["player"] # Player boxes
         hitbox_wh_ratio = pbox["hitbox"].x/pbox["hitbox"].y # Drawbox width/height ratio
-        scaled_hitbox = pygame.Vector2(height*hitbox_wh_ratio, height) # Scale image to these dimensions
+        hitbox_dim = pygame.Vector2(height*hitbox_wh_ratio, height) # Scale image to these dimensions
+
+        self.rect = pygame.Rect((0,0), hitbox_dim)
+        self.rect.midbottom = self.pos.xy
 
         drawbox_scaling = pbox["drawbox"].elementwise()/pbox["hitbox"].elementwise()
-        drawbox_dim = scaled_hitbox.elementwise()*drawbox_scaling.elementwise()
-
-        self.rect = pygame.Rect((0,0), scaled_hitbox)
-        self.rect.midbottom = self.pos.xy
+        drawbox_dim = hitbox_dim.elementwise()*drawbox_scaling.elementwise()
 
         self.drawbox = pygame.Rect((0,0), drawbox_dim)
         self.drawbox.midbottom = self.pos.xy
+
+        self.attack_range = (drawbox_dim.x-hitbox_dim.x)/2
+        attackbox_dim = self.attack_range, hitbox_dim.y
+
+        self.attackbox = pygame.Rect((0,0), attackbox_dim)
+        self.attackbox.midleft = self.rect.midright
 
         for tag in self.spritesheet.frames.keys():
             for i, frame in enumerate(self.spritesheet.frames[tag]):
@@ -44,7 +51,7 @@ class Player(pygame.sprite.Sprite):
         self.collisions = {"right":False, "left":False, "top":False, "bottom":False}
         self.state = {
             "idle":False, "running":False, "jumping":False, "falling":False, 
-            "rolling":False, "death":False
+            "rolling":False, "death":False, "attacking":False
             }
         self.animation_state = {
             "rolling":False, "death":False, "jump":False,
@@ -56,16 +63,13 @@ class Player(pygame.sprite.Sprite):
         self.fell_from_height = 0
         
         # Timers
-        self.idle_timer = Timer("down", "ticks", 2)
-        rolling_animation_duration = sum(self.animator.animation_delays["rolling"])-1
-        self.rolling_animation_timer = Timer("down", "ticks", rolling_animation_duration)
-        death_animation_duration = sum(self.animator.animation_delays["death"])
-        self.death_animation_timer = Timer("down", "ticks", death_animation_duration)
+        self.create_timers()
 
         # Other
         self.acceleration = pygame.Vector2(0, game_vars["gravity"])
         self.velocity = pygame.Vector2(0, 0)
         self.scroll_offset = pygame.Vector2(0, 0)
+        self.current_attack_ability = "whip_slash"
 
     @property
     def abs_x(self):
@@ -79,10 +83,21 @@ class Player(pygame.sprite.Sprite):
     def fall_distance(self):
         return -(self.abs_y-self.fell_from_height)/game_vars["tile_size"]
 
-    def update(self, dt, collisions_objects, scroll):
+    @property
+    def mouse_pos(self):
+        return pygame.Vector2(pygame.mouse.get_pos())
+
+    def update(self, dt, collisions_objects, bullets, scroll):
+        """
+        Performs all the necessary updates for the player
+        """
+        self.global_bullets = bullets
+
         self.check_state()
         self.check_idle()
-        self.check_state(True)
+        #self.check_state(debug=True)
+
+        self.handle_input()
 
         self.horizontal_movement(dt)
         self.handle_collisions(self.get_collisions(collisions_objects), axis=0)
@@ -95,24 +110,39 @@ class Player(pygame.sprite.Sprite):
 
         self.rect.midbottom = self.pos.xy
         self.drawbox.midbottom = self.pos.xy
+        if self.facing["right"]:
+            self.attackbox.midleft = self.rect.midright
+        elif self.facing["left"]:
+            self.attackbox.midright = self.rect.midleft
 
     def render(self):
-        history = self.state_history[::-1]
+        """
+        Renders the correct frame depending on what state the player is 
+        in with the help of the animator class.
+        """
         if self.state["running"] and abs(self.velocity.x) > 0.25*game_vars["max_vel"]:
             frame = self.animator.get_frame("running")
         elif self.state["jumping"]:
             frame = self.animator.get_frame("jumping")
         elif self.state["falling"]:
             frame = self.animator.get_frame("falling")
-        elif len(history) >= 2 and self.find_true(self.state) == None and history[0] == "jumping":
+        elif self.find_true(self.state) == None and self.get_state_from_history(0) == "jumping":
             frame = self.animator.get_frame("jumping")
-        elif len(history) >= 2 and self.find_true(self.state) == None and history[0] == "falling":
+        elif self.find_true(self.state) == None and self.get_state_from_history(0) == "jumping":
             frame = self.animator.get_frame("running")
         elif self.state["rolling"]:
-            time = self.rolling_animation_timer.get_time()
             frame = self.animator.get_frame("rolling")
         elif self.state["death"]:
             frame = self.animator.get_frame("death")
+        elif self.state["attacking"]:
+            if self.animation_state["whip_slash"]:
+                frame = self.animator.get_frame("whip_slash")
+            elif self.animation_state["whip_stun"]:
+                frame = self.animator.get_frame("whip_stun")
+            elif self.animation_state["fire_pistol"]:
+                frame = self.animator.get_frame("fire_pistol")
+            elif self.animation_state["rolling"]:
+                frame = self.animator.get_frame("rolling")
         else:
             frame = self.animator.get_frame("idle")
 
@@ -123,18 +153,25 @@ class Player(pygame.sprite.Sprite):
 
         pygame.draw.rect(self.canvas, colors["cool blue"], self.drawbox, width=1)
         pygame.draw.rect(self.canvas, colors["red"], self.rect, width=1)
+        pygame.draw.rect(self.canvas, colors["green"], self.attackbox, width=1)
 
     def set_state(self, state, bool=True, animation=False):
         """
-        Sets all states to false, then {state} to true
-        Can set the given {state} to false if {bool}=False
+        Sets all states to false, then {state} to true.
+        Can set the given {state} to false if {bool}=False.
         If {animation}=True the given {state} will become true in the {self.animation_state}
+        and stop some* of the animation timers\n
+        *Do not stop\n
+        -death_animation_timer
         """
         if animation:
             for key in self.animation_state.keys():
                 self.animation_state[key] = False
             if state != None:
                 self.animation_state[state] = bool
+            for animation in self.animation_timers:
+                if animation not in [state, "death"]:
+                    self.animation_timers[animation].reset()
         else:
             for key in self.state.keys():
                 self.state[key] = False
@@ -142,18 +179,38 @@ class Player(pygame.sprite.Sprite):
                 self.state[state] = bool
 
     def check_state(self, debug=False):
+        """
+        Determines what state the player is in and adds it to the state history if
+        it is a new occurence of it.
+        """
         if not debug:
             self.previous_state = self.state.copy()
 
             if self.rolling_animation_timer.finished():
                 self.set_state("rolling", bool=False, animation=True)
                 self.set_state("rolling", bool=False)
+                self.velocity.x = 0
                 self.rolling_animation_timer.reset()
             
             if self.death_animation_timer.finished():
                 self.set_state("death", bool=False, animation=True)
                 self.set_state("death", bool=False)
                 self.death_animation_timer.reset()
+
+            if self.whip_slash_timer.finished():
+                self.set_state("whip_slash", bool=False, animation=True)
+                self.set_state("attacking", bool=False)
+                self.whip_slash_timer.reset()
+
+            if self.whip_stun_timer.finished():
+                self.set_state("whip_stun", bool=False, animation=True)
+                self.set_state("attacking", bool=False)
+                self.whip_stun_timer.reset()
+
+            if self.fire_pistol_timer.finished():
+                self.set_state("fire_pistol", bool=False, animation=True)
+                self.set_state("attacking", bool=False)
+                self.fire_pistol_timer.reset()
 
             if self.collisions["bottom"] and (self.state["falling"] or self.previous_state["falling"]):
                 rolling_fall_range = range(game_vars["fall_ranges"][0], game_vars["fall_ranges"][1])
@@ -170,10 +227,18 @@ class Player(pygame.sprite.Sprite):
                     self.death_animation_timer.start()
                 else:
                     self.set_state(None)
-            if self.animation_state["rolling"]:
+
+            elif self.animation_state["rolling"]:
                 self.set_state("rolling")
             elif self.animation_state["death"]:
                 self.set_state("death")
+            elif self.animation_state["whip_slash"]:
+                self.set_state("attacking")
+            elif self.animation_state["whip_stun"]:
+                self.set_state("attacking")
+            elif self.animation_state["fire_pistol"]:
+                self.set_state("attacking")
+
             elif self.collisions["bottom"] and self.velocity.x != 0:
                 self.set_state("running")
             elif self.velocity.y < 0:
@@ -199,6 +264,9 @@ class Player(pygame.sprite.Sprite):
                 pass
 
     def check_idle(self):
+        """
+        Sets the player's state to idle if the idle timer has been reached 
+        """
         if not any(self.state.values()):
             self.idle_timer.start()
         else:
@@ -213,7 +281,49 @@ class Player(pygame.sprite.Sprite):
             except IndexError:
                 pass
 
+    def get_state_from_history(self, index):
+        """
+        Gets state from the history, index=0 is the current state
+        """
+        if len(self.state_history) > 3:
+            return self.state_history[::-1][index]
+        else: return False
+
+    def handle_input(self):
+        """
+        Handles the player's inputs
+        """
+        # Shortcuts
+        def key(key, hold=True): return self.listener.key_pressed(key, hold)
+        def mouse(button, hold=True, trigger=1, id=""): return self.listener.mouse_clicked(button, hold, trigger, id)
+        animation = self.animator.animation_delays[self.current_attack_ability]
+
+        # Handle key inputs
+        if key("1"):
+            self.switch_attack("whip_slash")
+            if self.attackbox.width > self.attack_range*0.90:
+                self.attackbox.inflate_ip(-0.20*self.attack_range, 0)
+        elif key("2"):
+            self.switch_attack("whip_stun")
+            if self.attackbox.width < self.attack_range*0.90:
+                self.attackbox.inflate_ip(+0.20*self.attack_range, 0)
+        elif key("3"):
+            self.switch_attack("fire_pistol")
+
+        # Handle mouse inputs
+        if self.state["idle"]:
+            if self.mouse_pos.x > self.pos.x:
+                self.facing["left"], self.facing["right"] = False, True
+            elif self.mouse_pos.x < self.pos.x:
+                self.facing["left"], self.facing["right"] = True, False
+        
+        if mouse(1, hold=True, trigger=5*len(animation), id=self.current_attack_ability):
+            self.attack(self.current_attack_ability)
+        
     def horizontal_movement(self, dt):
+        """
+        Handles the player's horizontal movement
+        """
         if debug:
             dt = 1
         else: dt *= fps
@@ -227,7 +337,7 @@ class Player(pygame.sprite.Sprite):
         if direction == -1:
             self.facing["left"], self.facing["right"] = True, False
 
-        if self.listener.key_pressed("left alt", hold=True):
+        if self.collisions["bottom"] and self.listener.key_pressed("left alt"):
             self.set_state("rolling", animation=True)
             self.rolling_animation_timer.start()
 
@@ -236,7 +346,7 @@ class Player(pygame.sprite.Sprite):
                 direction = 0.15
             elif self.facing["left"]:
                 direction = -0.15
-    
+
             """
             # Friction in air should be less than on ground but the amount
             # you can move the character way less.
@@ -256,6 +366,9 @@ class Player(pygame.sprite.Sprite):
         self.drawbox.centerx = self.pos.x
 
     def vertical_movement(self, dt):
+        """
+        Handles the player's vertical movement
+        """
         if debug:
             dt = 1
         else: dt *= fps
@@ -272,12 +385,60 @@ class Player(pygame.sprite.Sprite):
         self.drawbox.bottom = self.pos.y
 
     def limit_velocity(self, max_velocity, increase_vel=False):
+        """
+        Limits the player's velocity to a certain max
+        """
         if increase_vel == True: max_velocity *= game_vars["sprint_multiplier"]
         if abs(self.velocity.x) > max_velocity:
             self.velocity.x = max_velocity if self.velocity.x > 0 else -max_velocity 
         if abs(self.velocity.x) < 0.1: self.velocity.x = 0
+
+    def attack(self, type):
+        """
+        Responsible for initializing the different attacks of the player
+        """
+        if type == "whip_slash":
+            self.set_state("whip_slash", animation=True)
+            self.whip_slash_timer.start()
+        elif type == "whip_stun":
+            self.set_state("whip_stun", animation=True)
+            self.whip_stun_timer.start()
+        elif type == "fire_pistol":
+            self.set_state("fire_pistol", animation=True)
+            self.fire_pistol_timer.start()
+            self.fire_bullet()
+
+    def switch_attack(self, attack_ability):
+        switched = True if attack_ability != self.current_attack_ability else False
+        self.current_attack_ability = attack_ability
+        return switched
+
+    def fire_bullet(self):
+        relative_mouse_pos = self.mouse_pos - self.rect.center
+        angle = math.degrees(math.atan2(relative_mouse_pos.y, relative_mouse_pos.x))
+        angle = self.limit_angle(angle)
+        speed = 40
+        self.global_bullets.add(Bullet(self.rect.center, angle, speed))
+
+    def limit_angle(self, angle):
+        if self.facing["left"]:
+            if angle < 180 - game_vars["player_fire_angle"]/2 and angle > 0:
+                return 180 - game_vars["player_fire_angle"]/2
+            elif angle > -180 + game_vars["player_fire_angle"]/2 and angle < 0:
+                return -180 + game_vars["player_fire_angle"]/2
+            else: return angle
+        elif self.facing["right"]:
+            if angle > game_vars["player_fire_angle"]/2:
+                return game_vars["player_fire_angle"]/2
+            elif angle < -game_vars["player_fire_angle"]/2:
+                return -game_vars["player_fire_angle"]/2
+            else: return angle
+        
     
     def handle_collisions(self, tile_collisions, axis):
+        """
+        Corrects the player's position if it collides with a tile
+        """
         if tile_collisions:
             for tile in tile_collisions:
                 if axis == 0:
@@ -304,6 +465,31 @@ class Player(pygame.sprite.Sprite):
     def get_collisions(self, group):
         collisions = pygame.sprite.spritecollide(self, group, False)
         return collisions
+
+    def create_timers(self):
+        self.idle_timer = Timer("down", "ticks", 2)
+
+        self.animation_timers = dict()
+        
+        rolling_animation_duration = sum(self.animator.animation_delays["rolling"])-1
+        self.rolling_animation_timer = Timer("down", "ticks", rolling_animation_duration)
+        self.animation_timers["rolling"] = self.rolling_animation_timer
+        
+        death_animation_duration = sum(self.animator.animation_delays["death"])
+        self.death_animation_timer = Timer("down", "ticks", death_animation_duration)
+        self.animation_timers["death"] = self.death_animation_timer
+
+        whip_slash_duration = sum(self.animator.animation_delays["whip_slash"])
+        self.whip_slash_timer = Timer("down", "ticks", whip_slash_duration)
+        self.animation_timers["whip_slash"] = self.whip_slash_timer
+
+        whip_stun_duration = sum(self.animator.animation_delays["whip_stun"])
+        self.whip_stun_timer = Timer("down", "ticks", whip_stun_duration)
+        self.animation_timers["whip_stun"] = self.whip_stun_timer
+
+        fire_pistol_duration = sum(self.animator.animation_delays["fire_pistol"])
+        self.fire_pistol_timer = Timer("down", "ticks", fire_pistol_duration)
+        self.animation_timers["fire_pistol"] = self.fire_pistol_timer
 
     def find_true(self, dictionary):
         for key, value in dictionary.items():

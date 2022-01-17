@@ -39,8 +39,9 @@ game_vars = {
     "jump_amplifier": 1.5,
     "crouch_slowdown": 0.5,
     "player_height": 2,
-    "fall_ranges":[4,10,20] # dy<4:nothing, 4<dy<10:rolling, 10<dy<20:unconscious, dy>20:dead
-}
+    "fall_ranges":[4,10,20], # dy<4:nothing, 4<dy<10:rolling, 10<dy<20:unconscious, dy>20:dead
+    "player_fire_angle":40 # Degrees
+}   
 
 bounding_boxes = {
     "player": {
@@ -49,8 +50,6 @@ bounding_boxes = {
     }
 
 }
-
-
 
 # LOAD RESOURCES
 
