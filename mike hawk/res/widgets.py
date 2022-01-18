@@ -1,19 +1,60 @@
 from io import SEEK_CUR
 import pygame
-from .config import SCREENSIZE, menubutton, colors
+from .config import SCREENSIZE, SCREEN_WIDTH, SCREEN_HEIGHT, menubutton, colors
+
+def blurSurf(surface, amt):
+    """
+    Blur the given surface by the given 'amount'.  Only values 1 and greater
+    are valid.  Value 1 = no blur.
+    """
+    if amt < 1.0:
+        raise ValueError("Arg 'amt' must be greater than 1.0, passed in value is %s"%amt)
+    scale = 1.0/float(amt)
+    surf_size = surface.get_size()
+    scale_size = (int(surf_size[0]*scale), int(surf_size[1]*scale))
+    surf = pygame.transform.smoothscale(surface, scale_size)
+    surf = pygame.transform.smoothscale(surf, surf_size)
+    return surf
+
+class BackgroundParalax:
+    def __init__(self, canvas, layers):
+        self.layers = [[image, [0,0]] for image in layers]
+        for i, layer in enumerate(self.layers):
+            self.layers[i][0] = pygame.transform.scale(layer[0], canvas.get_size())
+        self.canvas = canvas
+        self.total_scroll_x = 0
+    
+    def update(self, scroll):
+        self.total_scroll_x += scroll
+        for i in range(len(self.layers)-1):
+            layer_offset = -self.total_scroll_x*(i+1)**2/50
+            index = -layer_offset//self.canvas.get_width()
+            self.layers[1:][i][1][0] = layer_offset 
+            self.layers[1:][i][1][0] += index*self.canvas.get_width()
+        
+    def render(self, game_canvas):
+        self.menu_canvas = game_canvas
+        for layer in self.layers:
+            x = layer[1][0]
+            y = layer[1][1]
+            self.canvas.blit(layer[0], (x, y))
+            self.canvas.blit(layer[0], (x+self.canvas.get_width(), y))
+            self.canvas.blit(layer[0], (x-self.canvas.get_width(), y))
+        self.canvas.blit(blurSurf(self.menu_canvas, 1), (0,0))
 
 class MenuButton:
     rect = menubutton.get_rect()
-    def __init__(self, surface, listener, pos, text, command=None):
+    def __init__(self, surface, listener, pos, text, command=None, scale_x=2, scale_y=3):
         self._surface = surface
         self.orig_rect = menubutton.get_rect()
         self._image = menubutton.copy()
         self._command = command
         self._text = text
         self._listener = listener
-        self.scale = 3
+        self.scale_x = scale_x / 1000
+        self.scale_y = scale_y / 1000
 
-        self._image = pygame.transform.scale(self._image, (self.scale*self.orig_rect.width, self.scale*self.orig_rect.height))
+        self._image = pygame.transform.scale(self._image, (int(SCREEN_WIDTH*self.scale_x*self.orig_rect.width), int(SCREEN_HEIGHT*self.scale_y*self.orig_rect.height)))
 
         font = pygame.font.SysFont("Ariel", 60)
         font_surf = font.render(self._text, False, colors["white knight"])
@@ -41,14 +82,14 @@ class MenuButton:
 
 
 class MenuButtonPanel:
-    def __init__(self, surface, listener, start_pos, buttons: int, padding, texts: list, commands: list):
+    def __init__(self, surface, listener, start_pos, buttons: int, padding, texts: list, commands: list, scl_x:int=2, scl_y:int=3):
         self._surface = surface
         self._listener = listener
         self.pos = start_pos
         self.buttons = []
         for i in range(buttons):
             self.buttons.append(MenuButton(surface, listener, (start_pos[0], start_pos[1]+(MenuButton.rect.height+padding)*i),
-                texts[i], command=commands[i]))
+                texts[i], command=commands[i], scale_x=scl_x, scale_y=scl_y))
 
     def update(self):
         for button in self.buttons:
