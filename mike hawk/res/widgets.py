@@ -53,10 +53,11 @@ class MenuButton:
         self._listener = listener
         self.scale_x = scale_x / 1000
         self.scale_y = scale_y / 1000
+        self.font_size = int(30 * scale_x)
 
         self._image = pygame.transform.scale(self._image, (int(SCREEN_WIDTH*self.scale_x*self.orig_rect.width), int(SCREEN_HEIGHT*self.scale_y*self.orig_rect.height)))
 
-        font = pygame.font.SysFont("Ariel", 60)
+        font = pygame.font.SysFont("Ariel", self.font_size)
         font_surf = font.render(self._text, False, colors["white knight"])
         img_center, font_center = self._image.get_rect().center, font_surf.get_rect().center
         center = (img_center[0] - font_center[0], img_center[1] - font_center[1])

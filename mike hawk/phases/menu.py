@@ -11,7 +11,7 @@ class MainMenu(Phase):
         self.canvas, self.listener = canvas, listener
         self.paralax = BackgroundParalax(self.canvas, paralax_layers)
 
-        self.buttonpanel = MenuButtonPanel(canvas, listener, (SCREENSIZE[0]/2-(MenuButton.rect.width*2), SCREENSIZE[1]/4), 3, 100, ["New Phase", "Options", "Quit"],
+        self.buttonpanel = MenuButtonPanel(canvas, listener, (SCREENSIZE[0]/2-(MenuButton.rect.width*2), SCREENSIZE[1]/3), 3, 100, ["New Phase", "Options", "Quit"],
             [lambda: MapMenu(canvas, listener).enter_phase(), lambda: OptionsMenu(canvas, listener).enter_phase(), quit])
 
         self.counter = 0
