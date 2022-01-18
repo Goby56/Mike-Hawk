@@ -83,3 +83,8 @@ editor_buttons = load_frames("editor_buttons")
 spawn_image = pygame.image.load(
         os.path.join(_base_dir, "assets", "editor", "spawn_point.png")
 )
+
+gui = pygame.Surface(200, 600) # temp make image
+gui.fill(colors["black magic"])
+gui_selection = pygame.Surface(200, 200)
+gui_selection.fill(colors["white knight"])
