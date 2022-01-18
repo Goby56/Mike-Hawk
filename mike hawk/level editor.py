@@ -37,9 +37,9 @@ class Menu(Phase):
         self.canvas = canvas
         self.listener = listener
         self.btn_panel = MenuButtonPanel(
-            self.canvas, listener, (10, 10), 3, 10, 
+            self.canvas, listener, (SCREENSIZE[0]/2-MenuButton.rect.width/2*3, SCREENSIZE[1]/4), 3, 40, 
             ["New Map", "Load Map", "Quit"], 
-            [self.new_map, self.load_map, quit]
+            [self.new_map, self.load_map, quit], scl_x=1.5, scl_y=1.5
         )
         tk.Tk().withdraw()
 
