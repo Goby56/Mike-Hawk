@@ -3,9 +3,7 @@
     "2":"jumping",
     "3":"rolling",
     "4":"falling",
-    "5":"attack",
+    "5":"attacked",
     "6":"running",
-    "7":"",
-    "8":"",
-    "9":""
+    "7":"attacking"
 }
