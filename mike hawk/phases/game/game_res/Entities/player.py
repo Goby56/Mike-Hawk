@@ -1,6 +1,6 @@
-import pygame, sys, os, math
+import pygame, sys, os, math, json
 sys.path.append("..")
-from res.config import spritesheet_dir, game_vars, player_animations, bounding_boxes, colors, fps, debug
+from res.config import spritesheet_dir, _base_dir, game_vars, player_animations, bounding_boxes, colors, fps, debug
 from res.animator import Animator
 from res.timers import Timer
 from res.spritesheet import Spritesheet
@@ -57,10 +57,13 @@ class Player(pygame.sprite.Sprite):
             "rolling":False, "death":False, "jump":False,
             "whip_slash":False, "whip_stun":False, "fire_pistol":False
             } # Animations that should play all the way through
+        self.current_animation = "idle"
         self.previous_state = self.state.copy()
         self.state_history = []
         self.facing = {"left":False, "right":True}
         self.fell_from_height = 0
+        with open(os.path.join(_base_dir, "player_animation_hierarchy.json"), "r") as f:
+            self.animation_hierarchy = json.load(f)
         
         # Timers
         self.create_timers()
@@ -141,8 +144,8 @@ class Player(pygame.sprite.Sprite):
                 frame = self.animator.get_frame("whip_stun")
             elif self.animation_state["fire_pistol"]:
                 frame = self.animator.get_frame("fire_pistol")
-            elif self.animation_state["rolling"]:
-                frame = self.animator.get_frame("rolling")
+            else:
+                frame = self.animator.get_frame("idle")
         else:
             frame = self.animator.get_frame("idle")
 
@@ -164,19 +167,29 @@ class Player(pygame.sprite.Sprite):
         *Do not stop\n
         -death_animation_timer
         """
-        if animation:
-            for key in self.animation_state.keys():
-                self.animation_state[key] = False
-            if state != None:
-                self.animation_state[state] = bool
-            for animation in self.animation_timers:
-                if animation not in [state, "death"]:
-                    self.animation_timers[animation].reset()
-        else:
-            for key in self.state.keys():
-                self.state[key] = False
-            if state != None:
-                self.state[state] = bool
+        # if animation:
+        #     for key in self.animation_state.keys():
+        #         self.animation_state[key] = False
+        #     if state != None:
+        #         self.animation_state[state] = bool
+        #     for animation in self.animation_timers:
+        #         if animation not in [state, "death"]:
+        #             self.animation_timers[animation].reset()
+        # else:
+        for key in self.state.keys():
+            self.state[key] = False
+        if state != None:
+            self.state[state] = bool
+
+    def append_animation(self, animation):
+        self.animation_state[animation] = True
+
+    def change_animation_to(self, animation):
+        for state in self.animation_state.keys():
+            self.animation_state[state] = False
+        if animation != None:
+            self.animation_state[animation] = True
+            self.current_animation = animation
 
     def check_state(self, debug=False):
         """
@@ -186,58 +199,42 @@ class Player(pygame.sprite.Sprite):
         if not debug:
             self.previous_state = self.state.copy()
 
-            if self.rolling_animation_timer.finished():
-                self.set_state("rolling", bool=False, animation=True)
-                self.set_state("rolling", bool=False)
-                self.velocity.x = 0
-                self.rolling_animation_timer.reset()
-            
-            if self.death_animation_timer.finished():
-                self.set_state("death", bool=False, animation=True)
-                self.set_state("death", bool=False)
-                self.death_animation_timer.reset()
+            attack_animations = ["whip_slash", "whip_stun", "fire_pistol"]
+            if any(self.animation_state.values()):
+                pending_animations = []
+                for state in self.animation_state.keys():
+                    if self.animation_state[state] == True:
+                        pending_animations.append(state)
+                
+                next_animation = ""
+                for index in self.animation_hierarchy.keys():
+                    ranking = self.animation_hierarchy[str(index)]
+                    for animation in pending_animations:
+                        if animation == ranking or (animation in attack_animations and ranking == "attacking"):
+                            next_animation = animation
+                            break
+                    if next_animation != "":
+                        break
+                
+                self.change_animation_to(next_animation)
+                for timer in self.animation_timers.keys():
+                    if timer == next_animation:
+                        self.animation_timers[timer].start()
+                        if self.animation_timers[timer].finished():
+                            self.animation_timers[timer].reset()
+                            self.change_animation_to(None)
+                            if timer in ["rolling"]:
+                                self.velocity.x = 0
 
-            if self.whip_slash_timer.finished():
-                self.set_state("whip_slash", bool=False, animation=True)
-                self.set_state("attacking", bool=False)
-                self.whip_slash_timer.reset()
+                    else: self.animation_timers[timer].reset()
 
-            if self.whip_stun_timer.finished():
-                self.set_state("whip_stun", bool=False, animation=True)
-                self.set_state("attacking", bool=False)
-                self.whip_stun_timer.reset()
-
-            if self.fire_pistol_timer.finished():
-                self.set_state("fire_pistol", bool=False, animation=True)
-                self.set_state("attacking", bool=False)
-                self.fire_pistol_timer.reset()
-
-            if self.collisions["bottom"] and (self.state["falling"] or self.previous_state["falling"]):
-                rolling_fall_range = range(game_vars["fall_ranges"][0], game_vars["fall_ranges"][1])
-                if int(self.fall_distance) in rolling_fall_range:
-                    self.set_state("rolling")
-                    self.set_state("rolling", animation=True)
-                    self.rolling_animation_timer.start()
-                elif int(self.fall_distance) >= max(rolling_fall_range):
-                    self.set_state("rolling", bool=False)
-                    self.set_state("rolling", bool=False, animation=True)
-                    self.rolling_animation_timer.reset()
-                    self.set_state("death")
-                    self.set_state("death", animation=True)
-                    self.death_animation_timer.start()
-                else:
-                    self.set_state(None)
-
-            elif self.animation_state["rolling"]:
-                self.set_state("rolling")
-            elif self.animation_state["death"]:
-                self.set_state("death")
-            elif self.animation_state["whip_slash"]:
-                self.set_state("attacking")
-            elif self.animation_state["whip_stun"]:
-                self.set_state("attacking")
-            elif self.animation_state["fire_pistol"]:
-                self.set_state("attacking")
+            if any(self.animation_state.values()):   
+                for animation in self.animation_state.keys():
+                    if self.animation_state[animation] == True:
+                        if animation in attack_animations:
+                            self.set_state("attacking")
+                            self.velocity.x = 0
+                        else: self.set_state(animation)
 
             elif self.collisions["bottom"] and self.velocity.x != 0:
                 self.set_state("running")
@@ -328,17 +325,24 @@ class Player(pygame.sprite.Sprite):
             dt = 1
         else: dt *= fps
 
+    
         key_a = self.listener.key_pressed("a", hold=True)
         key_d = self.listener.key_pressed("d", hold=True)
 
         direction = key_d - key_a
+
+        if any(self.animation_state.values()):
+            current_timer = self.animation_timers[self.find_true(self.animation_state)]
+            if current_timer.get_time() > current_timer.starting_time*0.35:
+                direction *= 0.15
+
         if direction == 1:
             self.facing["left"], self.facing["right"] = False, True 
         if direction == -1:
             self.facing["left"], self.facing["right"] = True, False
 
         if self.collisions["bottom"] and self.listener.key_pressed("left alt"):
-            self.set_state("rolling", animation=True)
+            self.append_animation("rolling")
             self.rolling_animation_timer.start()
 
         if self.state["rolling"]:
@@ -376,6 +380,13 @@ class Player(pygame.sprite.Sprite):
         if self.listener.key_pressed("space", hold=True) and self.collisions["bottom"]:
             self.velocity.y = -game_vars["jump strength"]
 
+        if self.collisions["bottom"] and (self.state["falling"] or self.previous_state["falling"]):
+            rolling_fall_range = range(game_vars["fall_ranges"][0], game_vars["fall_ranges"][1])
+            if int(self.fall_distance) in rolling_fall_range:
+                self.append_animation("rolling")
+            elif int(self.fall_distance) >= max(rolling_fall_range):
+                self.append_animation("death")
+
         self.collisions["bottom"] = False
 
         self.velocity.y += self.acceleration.y*dt
@@ -398,19 +409,18 @@ class Player(pygame.sprite.Sprite):
         Responsible for initializing the different attacks of the player
         """
         if type == "whip_slash":
-            self.set_state("whip_slash", animation=True)
-            self.whip_slash_timer.start()
+            self.append_animation("whip_slash")
         elif type == "whip_stun":
-            self.set_state("whip_stun", animation=True)
-            self.whip_stun_timer.start()
+            self.append_animation("whip_stun")
         elif type == "fire_pistol":
-            self.set_state("fire_pistol", animation=True)
-            self.fire_pistol_timer.start()
+            self.append_animation("fire_pistol")
             self.fire_bullet()
 
     def switch_attack(self, attack_ability):
-        switched = True if attack_ability != self.current_attack_ability else False
-        self.current_attack_ability = attack_ability
+        if attack_ability != self.current_attack_ability and not any(self.animation_state.values()):
+            self.current_attack_ability = attack_ability
+            switched = True
+        else: switched = False
         return switched
 
     def fire_bullet(self):
