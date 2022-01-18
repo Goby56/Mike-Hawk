@@ -7,7 +7,7 @@ def crop_image(surface, data):
 
 def load_set(dir, filename):
     path = os.path.join(dir, filename)
-    image = pygame.image.load(path + ".png")
+    image = pygame.image.load(path + ".png").convert_alpha()
     meta_data = path + ".json"
     with open(meta_data) as file:
         data = json.load(file)

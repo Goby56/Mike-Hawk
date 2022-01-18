@@ -37,10 +37,10 @@ class MapMenu(Phase):
         gober = lambda: Game(canvas, listener, "gober").enter_phase()
         minecraft = lambda: Game(canvas, listener, "minecraft").enter_phase()
         minecraft2 = lambda: Game(canvas, listener, "minecraft2").enter_phase()
+        jungle = lambda: Game(canvas, listener, "jungle").enter_phase()
         self.buttonpanel = MenuButtonPanel(canvas, listener, (SCREEN_RECT.width/2-MenuButton.rect.width*2, SCREEN_RECT.height/4), 6, 100, 
-            ["Gober", "Minecraft", "Minecraft2", "Map 3", "Map 4", "Back"],
-            [gober, minecraft, minecraft2, 
-            lambda: print("Map 3"), lambda: print("Map 4"), self.exit_phase]
+            ["Gober", "Minecraft", "Minecraft2", "Jungle", "Map 4", "Back"],
+            [gober, minecraft, minecraft2, jungle, lambda: print("Map 4"), self.exit_phase]
         )
 
     def update(self, *args, **kwargs):

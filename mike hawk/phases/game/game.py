@@ -34,7 +34,7 @@ class Game(Phase):
         self.map = self.level["map"]
 
 
-        tileset = list(load_set(os.path.join(spritesheet_dir, "old tiles"), self.level["tileset"]).values())
+        tileset = list(load_set(os.path.join(_base_dir, "assets", "tilesets"), self.level["tileset"]).values())
         self.load_map(tileset)
         self.paralax = Paralax(canvas, paralax_layers)
 
