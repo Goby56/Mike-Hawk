@@ -24,7 +24,7 @@ class Enemy(pygame.sprite.Sprite):
         self.jumping = False
         self.velocity = [0, 0]
         self.scroll = pygame.Vector2(0, 0)
-
+        self.sleeping = False
 
         # general stats
         self.agro_distance = 7 # tiles
@@ -68,7 +68,7 @@ class Enemy(pygame.sprite.Sprite):
         self.distance, self.direction = self.get_distance(self.player_pos) # distance to player
         self.velocity[1] = game_vars["gravity"]
 
-        if self.engaged and self.distance >= self.attack_range:
+        if self.engaged and self.distance >= self.attack_range and not self.sleeping:
             self.move()
         
         self.on_ground = False
@@ -99,7 +99,6 @@ class Enemy(pygame.sprite.Sprite):
 
         if len(self.collisions): return True
         return False
-        
 
     def y_collisions(self):
         for tile in self.collisions:
@@ -115,13 +114,17 @@ class Enemy(pygame.sprite.Sprite):
         """
         called when hit by bullet
         """
+        self.sleeping = True
 
     def knockback(self):
         """
         called when hit with knockback attack
         """
+        self.velocity[0] += self.direction*3
+        self.velocity[1] -= 2
+        # ändra bild
 
-    def stun(self):
+    def anger(self): # stå på bakbenen och slå på bröstet (står stilla så man hinner fly och hämta mer ammo)
         """
         called when hit with stun attack
         """
