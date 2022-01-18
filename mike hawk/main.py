@@ -37,7 +37,7 @@ class Main: #Mike Hawk's Jungle adventure
         current_phase.render()
 
         if isinstance(current_phase, Game):
-            self.listener.on_key("escape", lambda: GameMenu(self.canvas, self.listener).enter_phase())
+            self.listener.on_key("escape", lambda: GameMenu(self.canvas, self.listener, current_phase.canvas.copy()).enter_phase())
 
         self._display.blit(self.canvas, (0, 0))
         pygame.display.update()
