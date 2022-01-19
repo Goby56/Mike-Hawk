@@ -57,6 +57,7 @@ class Menu(Phase):
             level["map"] = {}
             level["triggers"] = []
             level["register"] = {}
+            level["spawners"] = []
             json.dump(level, file)
 
     def new_map(self):
@@ -155,6 +156,10 @@ class Editor(Phase):
             self.listbox.hover
         ]
 
+        if self.panel.hover():
+            if self.listener.mouse_clicked(4): self.panel.scroll(10)
+            if self.listener.mouse_clicked(5): self.panel.scroll(-10)
+
         if any(self.func_keys.values()) or any(hover_list): 
             self.other = True
         else:
@@ -214,6 +219,10 @@ class Editor(Phase):
         self.canvas.blit(spawn_surf, (self.tile*spawn_x+self.x_offset,
             SCREENSIZE[1]-(MAX_Y-spawn_y+2)*self.tile+self.y_offset))
 
+        for x, y in level["spawners"]:
+            pygame.draw.rect(self.canvas, colors["red"], (self.tile*x+self.x_offset,
+            SCREENSIZE[1]-(MAX_Y-y)*self.tile+self.y_offset, self.tile, self.tile))
+
         self.triggers = [trigger for trigger in self.triggers if trigger.name in level["register"].keys()]
 
         pygame.mouse.get_rel()
@@ -252,8 +261,9 @@ class Editor(Phase):
         return False
 
     def get_movement(self):
-        if self.listener.mouse_clicked(4): self.tile += 1
-        if self.listener.mouse_clicked(5) and self.tile > 1: self.tile -= 1
+        if not self.panel.hover():
+            if self.listener.mouse_clicked(4): self.tile += 1
+            if self.listener.mouse_clicked(5) and self.tile > 1: self.tile -= 1
 
         if self.func_keys["space"] and self.listener.mouse_clicked(1, hold=True):
             rel = pygame.mouse.get_rel()
@@ -278,19 +288,27 @@ class Editor(Phase):
         print("spawn set at:", x, y)
         level["spawn"] = [x, y]
 
+    def enemy_spawn(self):
+        if not self.mouse in level["spawners"]:
+            level["spawners"].append(self.mouse)
+
     def entity(self):
         pos = self.mouse
         trigger = self.get_trigger(pos)
-        if not trigger and self.listbox.selected != "spawn_point":
+        if not trigger and not self.listbox.selected in ["spawn_point", "enemy_spawner"]:
             self.new_trigger(pos, self.listbox.selected)
         elif self.listbox.selected == "spawn_point":
             self.spawn()
+        elif self.listbox.selected == "enemy_spawner":
+            self.enemy_spawn()
 
     def entity_delete(self):
         pos = self.mouse
         trigger = self.get_trigger(pos)
         if trigger and trigger.name == self.listbox.selected: 
             self.triggers.remove(trigger)
+        if self.listbox.selected == "enemy_spawner" and list(pos) in level["spawners"]:
+            level["spawners"].remove(list(pos))
 
     def select(self):
         if self.listener.mouse_clicked(1, hold=True):
@@ -414,16 +432,6 @@ class Trigger:
         canvas.blit(surf, (self.x*dim+x_offset, SCREENSIZE[1]-(MAX_Y-self.y)*dim+y_offset, dim, dim))
 
 
-class SpawnPoint:
-    def __init__(self, pos, types=["Enemy"]):
-        self.x, self.y = pos
-        
-        self.dict = {
-            "pos": pos,
-            "types": types
-        }
-
-
 class Selection:
     def __init__(self, mouse, size):
         self.start_pos = mouse
@@ -509,6 +517,11 @@ class Panel:
         i = (self.get_selected(layer) + way) % len(self.tiles[layer])
         self.selected = self.tiles[layer][i]
 
+    def scroll(self, offset):
+        for layer in self.tiles:
+            for tile in layer:
+                tile.y += offset
+
     def update(self, layer):
         self.surface.fill(colors["black magic"])
         if not self.selected in self.tiles[layer]:
@@ -532,7 +545,7 @@ class Listbox:
     def __init__(self, canvas, listener, width, items):
         self.canvas = canvas
         self.width = width
-        self.items = ["spawn_point"] + items # Listbox items
+        self.items = ["spawn_point" , "enemy_spawner"] + items # Listbox items
         self.listener = listener
 
         self.padding = 5
