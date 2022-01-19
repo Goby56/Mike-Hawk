@@ -38,15 +38,17 @@ class Game(Phase):
         self.load_map(tileset)
         self.paralax = Paralax(canvas, paralax_layers)
 
-        player_height = int(self.tile_size*game_vars["player_height"])
         spawn_x, spawn_y = self.level["spawn"]
-        self.player = Player(listener, canvas, (spawn_x*self.tile_size, spawn_y*self.tile_size), player_height)
+        self.player = Player(listener, canvas, (spawn_x*self.tile_size, spawn_y*self.tile_size))
         
         self.camera = Camera(self, canvas)
         self.scroll = pygame.Vector2(0, 0)
 
-        self.enemy_group = pygame.sprite.Group()
-        self.enemy_group.add(Enemy((5, 10)))
+        self.gorillas = []
+        self.gorillas.append(Enemy((30*game_vars["tile_size"], 10*game_vars["tile_size"]), self.canvas))
+
+        # self.enemy_group = pygame.sprite.Group()
+        # self.enemy_group.add(Enemy((5, 10), self.canvas))
         
 
     def load_map(self, tileset):
@@ -76,15 +78,10 @@ class Game(Phase):
         self.update_triggers()
         self.paralax.update(self.scroll)
         
-        #print(get_angle(pygame.mouse.get_pos(), self.player.rect.center))
-        # if self.listener.mouse_clicked(1, hold=True, trigger=20, id="player_shoot_bullet_1"):
-        #     angle = get_angle(pygame.mouse.get_pos(), self.player.rect.center)
-        #     self.bullets.add(Bullet(self.player.rect.center, angle, 20)) # player.current weapon
-        #     print(angle, math.cos(angle), math.sin(angle))
-
         self.bullets.update(self.scroll, self.tiles)
         Tile.tiles = self.tiles
-        self.enemy_group.update(self.player.pos, self.scroll)
+        for gorilla in self.gorillas:
+            gorilla.update(self.player, self.tiles, self.scroll)
 
 
     def render(self):
@@ -94,7 +91,9 @@ class Game(Phase):
         self.bullets.draw(self.canvas)
         self.player.render()
         self.paralax.render(method = "fg")
-        self.enemy_group.draw(self.canvas)
+        #self.enemy_group.draw(self.canvas)
+        for gorilla in self.gorillas:
+            gorilla.render()
 
     def get_world_dimensions(self):
         return (len(self.map[0]) * self.tile_size, len(self.map) * self.tile_size)
