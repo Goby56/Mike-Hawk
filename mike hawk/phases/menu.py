@@ -11,7 +11,7 @@ class MainMenu(Phase):
         self.canvas, self.listener = canvas, listener
         self.paralax = BackgroundParalax(self.canvas, paralax_layers)
 
-        self.buttonpanel = MenuButtonPanel(canvas, listener, (SCREENSIZE[0]/2-(menubutton.get_rect().width*screen_scale_x)*2, SCREENSIZE[1]/3), 3, 100, ["Play", "Options", "Quit"],
+        self.buttonpanel = MenuButtonPanel(canvas, listener, (SCREENSIZE[0]/2-(menubutton.get_rect().width*screen_scale_x*4)/2, SCREENSIZE[1]/3), 3, 100, ["Play", "Options", "Quit"],
             [lambda: MapMenu(canvas, listener).enter_phase(), lambda: OptionsMenu(canvas, listener).enter_phase(), quit])
 
         self.counter = 0
@@ -38,7 +38,7 @@ class MapMenu(Phase):
         minecraft = lambda: Game(canvas, listener, "minecraft").enter_phase()
         minecraft2 = lambda: Game(canvas, listener, "minecraft2").enter_phase()
         jungle = lambda: Game(canvas, listener, "jungle").enter_phase()
-        self.buttonpanel = MenuButtonPanel(canvas, listener, (SCREENSIZE[0]/2-(menubutton.get_rect().width*screen_scale_x)*2, SCREEN_RECT.height/10), 6, 100, 
+        self.buttonpanel = MenuButtonPanel(canvas, listener, (SCREENSIZE[0]/2-(menubutton.get_rect().width*screen_scale_x*4)/2, SCREEN_RECT.height/8), 6, 100, 
             ["Gober", "Minecraft", "Minecraft2", "Jungle", "Map 4", "Back"],
             [gober, minecraft, minecraft2, jungle, lambda: print("Map 4"), self.exit_phase]
         )
@@ -50,7 +50,7 @@ class GameMenu(Phase):
     def __init__(self, canvas, listener, game_canvas):
         self.canvas, self.listener = canvas, listener
         self.game_canvas = blurSurf(game_canvas, 10)
-        self.buttonpanel = MenuButtonPanel(self.canvas, listener, (SCREENSIZE[0]/2-(menubutton.get_rect().width*screen_scale_x)*2, SCREEN_RECT.height/4), 3, 100, 
+        self.buttonpanel = MenuButtonPanel(self.canvas, listener, (SCREENSIZE[0]/2-(menubutton.get_rect().width*screen_scale_x*4)/2, SCREEN_RECT.height/3), 3, 100, 
             ["Return", "Options", "Main Menu"], [self.exit_phase, lambda: OptionsMenu(self.canvas, listener).enter_phase(), lambda: self.exit_phase(amount=2)])
 
     def update(self, *args, **kwargs):
@@ -63,7 +63,7 @@ class OptionsMenu(Phase):
     def __init__(self, canvas, listener):
         self.canvas, self.listener = canvas, listener
 
-        self.backbutton = MenuButton(canvas, listener, (SCREENSIZE[0]/2-(menubutton.get_rect().width*screen_scale_x)*2, SCREEN_RECT.height/4), "Back", command=self.exit_phase)
+        self.backbutton = MenuButton(canvas, listener, (SCREENSIZE[0]/2-(menubutton.get_rect().width*screen_scale_x*4)/2, SCREEN_RECT.height/4), "Back", command=self.exit_phase)
 
     def update(self, *args, **kwargs):
         self.backbutton.update()

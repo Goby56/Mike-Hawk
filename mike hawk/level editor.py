@@ -37,9 +37,9 @@ class Menu(Phase):
         self.canvas = canvas
         self.listener = listener
         self.btn_panel = MenuButtonPanel(
-            self.canvas, listener, (SCREENSIZE[0]/2-(menubutton.get_rect().width*screen_scale_x)*2, SCREENSIZE[1]/4), 3, 40, 
+            self.canvas, listener, (SCREENSIZE[0]/2-(menubutton.get_rect().width*screen_scale_x*4)/2, SCREENSIZE[1]/4), 3, 80, 
             ["New Map", "Load Map", "Quit"], 
-            [self.new_map, self.load_map, quit], scl_x=1.5, scl_y=1.5
+            [self.new_map, self.load_map, quit], scl_x=4, scl_y=3
         )
         tk.Tk().withdraw()
 
@@ -557,11 +557,11 @@ class Listbox:
         self.rect = self.surface.get_rect(topleft = (SCREENSIZE[0]-self.width, 0))
 
         self.add_button = MenuButton(self.canvas, self.listener, (self.rect.x + self.padding, SCREENSIZE[1]-100), 
-            "Add Trigger", self.add_trigger, scale_x=0.5, scale_y=0.9
+            "Add Trigger", self.add_trigger, scale_x=1.5, scale_y=2, font_size=0.5
         )
         self.add_button.rect.top = SCREENSIZE[1] - 2*self.add_button.rect.height - 2*self.padding
         self.remove_button = MenuButton(self.canvas, self.listener, (self.padding + self.rect.x, 
-        SCREENSIZE[1]-self.add_button.rect.height-self.padding), "Remove Trigger", self.remove_trigger, scale_x=0.5, scale_y=0.9
+        SCREENSIZE[1]-self.add_button.rect.height-self.padding), "Remove Trigger", self.remove_trigger, scale_x=1.5, scale_y=2, font_size=0.5
         )
         self.new_listbox = lambda i, name: ListboxItem(self.surface, self.listener, (self.padding, 
             self.padding+25*i), self.width-2*self.padding, name)
