@@ -17,8 +17,6 @@ screen_scale_y = SCREEN_HEIGHT / NOMINAL_HEIGHT
 print(SCREENSIZE)
 fps = 60
 debug = True
-_screen_offset = 4/3
-
 
 colors = {
     "white": (255, 255, 255),
@@ -32,16 +30,13 @@ colors = {
 }
 
 game_vars = {
-    "gravity": 0.5*_screen_offset,
-    "jump strength": 8*_screen_offset,
-    "speed": 5*_screen_offset,
-    "ground_friction": -0.2,
-    "air_resistance": -0.075,
-    "max_vel": 3*_screen_offset,
-    "tile_size": int(40*screen_scale_x),
-    "sprint_multiplier": 1.5,
-    "jump_amplifier": 1.5,
-    "crouch_slowdown": 0.5,
+    "gravity": 2/3*screen_scale_x,
+    "jump strength": 32/3*screen_scale_x,
+    "speed": 20/3*screen_scale_x,
+    "ground_friction": -0.2*screen_scale_x,
+    "air_resistance": -0.075*screen_scale_x,
+    "max_vel": 3*screen_scale_x,
+    "tile_size": int(54*screen_scale_x),
     "player_height": 2,
     "fall_ranges":[4,10,20], # dy<4:nothing, 4<dy<10:rolling, 10<dy<20:unconscious, dy>20:dead
     "player_fire_angle":40 # Degrees

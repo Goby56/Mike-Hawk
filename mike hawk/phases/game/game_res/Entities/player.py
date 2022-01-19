@@ -98,7 +98,7 @@ class Player(pygame.sprite.Sprite):
 
         self.check_state()
         self.check_idle()
-        #self.check_state(debug=True)
+        self.check_state(debug=True)
 
         self.handle_input()
 
@@ -389,9 +389,13 @@ class Player(pygame.sprite.Sprite):
 
         self.collisions["bottom"] = False
 
-        self.velocity.y += self.acceleration.y*dt
-        self.pos.y += int(self.velocity.y*dt + 0.5*(self.acceleration.y * dt**2))   
         
+        self.velocity.y += self.acceleration.y*dt
+        delta_pos = int(self.velocity.y*dt + 0.5*(self.acceleration.y * dt**2))
+        delta_pos = 1 if delta_pos == 0 else delta_pos
+        self.pos.y += delta_pos  
+    
+
         self.rect.bottom = self.pos.y
         self.drawbox.bottom = self.pos.y
 
