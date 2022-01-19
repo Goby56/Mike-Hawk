@@ -8,12 +8,16 @@ MAX_Y = 256
 
 import ctypes, pygame, os
 SCREENSIZE = ctypes.windll.user32.GetSystemMetrics(0), ctypes.windll.user32.GetSystemMetrics(1)
+#SCREENSIZE = (1280, 720)
 SCREEN_WIDTH, SCREEN_HEIGHT = SCREENSIZE
-#SCREENSIZE = 400, 200
+NOMINAL_WIDTH, NOMINAL_HEIGHT = [1920, 1080]
+screen_scale_x = SCREEN_WIDTH / NOMINAL_WIDTH
+screen_scale_y = SCREEN_HEIGHT / NOMINAL_HEIGHT
+
 print(SCREENSIZE)
 fps = 60
 debug = True
-_screen_offset = SCREEN_WIDTH / 1280
+_screen_offset = 4/3
 
 
 colors = {
@@ -34,7 +38,7 @@ game_vars = {
     "ground_friction": -0.2,
     "air_resistance": -0.075,
     "max_vel": 3*_screen_offset,
-    "tile_size": int(40*_screen_offset),
+    "tile_size": int(40*screen_scale_x),
     "sprint_multiplier": 1.5,
     "jump_amplifier": 1.5,
     "crouch_slowdown": 0.5,
@@ -88,3 +92,5 @@ gui = pygame.Surface((200, 600)) # temp make image
 gui.fill(colors["black magic"])
 gui_selection = pygame.Surface((200, 200))
 gui_selection.fill(colors["white knight"])
+
+
