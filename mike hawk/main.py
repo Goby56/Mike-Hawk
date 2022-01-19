@@ -11,7 +11,7 @@ pygame.font.init()
 
 class Main: #Mike Hawk's Jungle adventure
     def __init__(self):
-        self._display = pygame.display.set_mode(SCREENSIZE, pygame.FULLSCREEN)
+        self._display = pygame.display.set_mode(SCREENSIZE) #pygame.FULLSCREEN)
         self._clock = pygame.time.Clock()
         self._previous_time = time.time()
         self.dt = 0

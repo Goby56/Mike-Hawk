@@ -1,6 +1,6 @@
 from io import SEEK_CUR
 import pygame
-from .config import SCREENSIZE, SCREEN_WIDTH, SCREEN_HEIGHT, menubutton, colors
+from .config import SCREENSIZE, SCREEN_WIDTH, SCREEN_HEIGHT, menubutton, colors, screen_scale_x, screen_scale_y
 
 def blurSurf(surface, amt):
     """
@@ -51,11 +51,11 @@ class MenuButton:
         self._command = command
         self._text = text
         self._listener = listener
-        self.scale_x = scale_x / 1000
-        self.scale_y = scale_y / 1000
-        self.font_size = int(30 * scale_x)
+        self.scale_x = screen_scale_x*scale_x
+        self.scale_y = screen_scale_y*scale_y
+        self.font_size = int(60 * screen_scale_x)
 
-        self._image = pygame.transform.scale(self._image, (int(SCREEN_WIDTH*self.scale_x*self.orig_rect.width), int(SCREEN_HEIGHT*self.scale_y*self.orig_rect.height)))
+        self._image = pygame.transform.scale(self._image, (int(self.scale_x*self.orig_rect.width), int(self.scale_y*self.orig_rect.height)))
 
         font = pygame.font.SysFont("Ariel", self.font_size)
         font_surf = font.render(self._text, False, colors["white knight"])
@@ -83,13 +83,14 @@ class MenuButton:
 
 
 class MenuButtonPanel:
-    def __init__(self, surface, listener, start_pos, buttons: int, padding, texts: list, commands: list, scl_x:int=2, scl_y:int=3):
+    def __init__(self, surface, listener, start_pos, buttons: int, padding, texts: list, commands: list, scl_x=5, scl_y=3):
         self._surface = surface
         self._listener = listener
         self.pos = start_pos
         self.buttons = []
+        self.padding = padding * screen_scale_y
         for i in range(buttons):
-            self.buttons.append(MenuButton(surface, listener, (start_pos[0], start_pos[1]+(MenuButton.rect.height+padding)*i),
+            self.buttons.append(MenuButton(surface, listener, (start_pos[0], start_pos[1]+(MenuButton.rect.height+self.padding)*i),
                 texts[i], command=commands[i], scale_x=scl_x, scale_y=scl_y))
 
     def update(self):

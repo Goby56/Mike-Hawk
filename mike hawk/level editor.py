@@ -10,7 +10,7 @@ from pygame.constants import FULLSCREEN
 from res.tileset import load_set
 from res.widgets import MenuButtonPanel, Toolbar, MenuButton
 from phases.phase import Phase
-from res.config import colors, _base_dir, paralax_layers, editor_buttons, spawn_image
+from res.config import colors, _base_dir, paralax_layers, editor_buttons, spawn_image, menubutton, screen_scale_x
 from listener import Listener
 
 
@@ -37,7 +37,7 @@ class Menu(Phase):
         self.canvas = canvas
         self.listener = listener
         self.btn_panel = MenuButtonPanel(
-            self.canvas, listener, (SCREENSIZE[0]/2-MenuButton.rect.width/2*3, SCREENSIZE[1]/4), 3, 40, 
+            self.canvas, listener, (SCREENSIZE[0]/2-(menubutton.get_rect().width*screen_scale_x)*2, SCREENSIZE[1]/4), 3, 40, 
             ["New Map", "Load Map", "Quit"], 
             [self.new_map, self.load_map, quit], scl_x=1.5, scl_y=1.5
         )
