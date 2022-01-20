@@ -274,7 +274,7 @@ class Editor(Phase):
         x, y = self.mouse
         tile = self.get_tile(x, y)
         index = 0
-        if tile and (tile.layer != self.layer or tile.image == self.tileset[self.layer][index]):
+        if tile and (tile.layer != self.layer or tile.image == self.tileset[self.layer][index]): # and tile.layer == self.layer:#
             return
         self.new_tile(x, y, self.panel.get_selected(self.layer), self.layer)
 
@@ -337,7 +337,7 @@ class Editor(Phase):
     def save(self):
         print("Saving...")
         with open(self.path, "w") as file:
-            json.dump(level, file, indent=4)
+            json.dump(level, file)
 
     def exit(self):
         if mb.askyesno("Save?", "Do you want to save?"):
