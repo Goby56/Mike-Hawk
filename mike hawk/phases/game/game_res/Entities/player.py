@@ -388,11 +388,10 @@ class Player(pygame.sprite.Sprite):
 
         self.rect.bottom = self.pos.y
 
-    def limit_velocity(self, max_velocity, increase_vel=False):
+    def limit_velocity(self, max_velocity):
         """
         Limits the player's velocity to a certain max
         """
-        if increase_vel == True: max_velocity *= game_vars["sprint_multiplier"]
         if abs(self.velocity.x) > max_velocity:
             self.velocity.x = max_velocity if self.velocity.x > 0 else -max_velocity 
         if abs(self.velocity.x) < 0.1: self.velocity.x = 0

@@ -75,13 +75,12 @@ class Game(Phase):
         self.triggers.update(self.scroll)
         self.update_triggers()
         self.paralax.update(self.scroll)
-        
-        self.bullets.update(self.scroll, self.tiles)
-        Tile.tiles = self.tiles
+        self.bullets.update(self.scroll, self.tiles, self.gorillas)
+        #Tile.tiles = self.tiles
         for gorilla in self.gorillas:
-            gorilla.update(self.player, self.tiles, self.scroll)
-            if pygame.sprite.spritecollide(gorilla, self.bullets, dokill=True):
-                gorilla.sleeping = True
+            gorilla.update(dt, self.player, self.tiles, self.bullets, self.scroll)
+            # if pygame.sprite.spritecollide(gorilla, self.bullets, dokill=True):
+            #     gorilla.sleeping = True
 
 
     def render(self):

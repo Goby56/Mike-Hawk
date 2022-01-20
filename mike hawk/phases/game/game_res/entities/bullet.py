@@ -15,8 +15,12 @@ class Bullet(pygame.sprite.Sprite):
         self.image.fill(colors["black"])
 
 
-    def update(self, scroll, tiles):
+    def update(self, scroll, tiles, gorillas):
         self.rect.x += math.cos(self.angle) * self.speed - scroll.x
         self.rect.y += math.sin(self.angle) * self.speed - scroll.y
         if pygame.sprite.spritecollide(self, tiles, dokill=False):
             self.kill()
+        for gorilla in gorillas:
+            if self.rect.colliderect(gorilla.rect):
+                gorilla.sleep()
+                self.kill()

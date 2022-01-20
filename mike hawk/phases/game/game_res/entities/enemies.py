@@ -1,7 +1,7 @@
 import pygame, sys, os, json
 sys.path.append("..")
 
-from res.config import game_vars, colors, MAX_Y, bounding_boxes, _base_dir
+from res.config import game_vars, colors, MAX_Y, bounding_boxes, _base_dir, debug, fps
 from phases.game.game_res.map import Tile
 from res.spritesheet import Spritesheet
 from res.animator import Animator
@@ -15,11 +15,8 @@ class Enemy(pygame.sprite.Sprite):
     """
     def __init__(self, spawn_pos, canvas):
         super().__init__()
-
         x, y = spawn_pos
-        pos = (x*TILES_SIZE, (MAX_Y - y)*TILES_SIZE)
-
-        self.pos = pygame.Vector2(pos)
+        self.pos = pygame.Vector2((x*TILES_SIZE, (MAX_Y - y)*TILES_SIZE))
         self.canvas = canvas
 
         self.spritesheet = Spritesheet("gorilla")
@@ -59,7 +56,7 @@ class Enemy(pygame.sprite.Sprite):
         self.collisions = {"right":False, "left":False, "top":False, "bottom":False}
         self.state = {
             "idle":False, "walking":False, "jumping":False, "aggrovated":False,
-            "attacking":False, "sleeping":False, "falling":True, "angry":False 
+            "attacking":False, "sleeping":False, "falling":True 
         }
         self.animation_state = {
             "sleeping":False, "aggrovated":False, "angry":False,
@@ -68,18 +65,21 @@ class Enemy(pygame.sprite.Sprite):
         self.current_animation = "idle"
         self.previous_state = self.state.copy()
         self.state_history = []
-        self.facing = {"left":True, "right":False}
+        self.facing = {"left":False, "right":True}
         with open(os.path.join(_base_dir, "gorilla_animation_hierarchy.json"), "r") as f:
             self.animation_hierarchy = json.load(f)
 
 
+        self.acceleration = pygame.Vector2(0, game_vars["gravity"])
         self.velocity = pygame.Vector2(0, 0)
         self.scroll_offset = pygame.Vector2(0, 0)
         self.health = 100
-        self.speed = 3
-        self.agro_distance = 20
-        self.attack_cooldown = 50
-        self.sleeping = False
+        self.engaged = False
+        self.roaming = False # Set to true when implemented
+        # self.speed = 3
+        # self.agro_distance = 20
+        # self.attack_cooldown = 50
+        # self.sleeping = False
 
         # Timers
         self.create_timers()
@@ -112,36 +112,44 @@ class Enemy(pygame.sprite.Sprite):
             self.animation_state[animation] = True
             self.current_animation = animation
 
+    def get_state_from_history(self, index):
+        """
+        Gets state from the history, index=0 is the current state
+        """
+        if len(self.state_history) > 3:
+            return self.state_history[::-1][index]
+        else: return False
+
     def check_state(self, debug=False):
         if not debug:
             self.previous_state = self.state.copy()
 
             attack_animations = ["slam_attack", "jump_attack"]
-            if any(self.animation_state.values()):
-                pending_animations = []
-                for state in self.animation_state.keys():
-                    if self.animation_state[state] == True:
-                        pending_animations.append(state)
+            # if any(self.animation_state.values()):
+            #     pending_animations = []
+            #     for state in self.animation_state.keys():
+            #         if self.animation_state[state] == True:
+            #             pending_animations.append(state)
                 
-                next_animation = ""
-                for index in self.animation_hierarchy.keys():
-                    ranking = self.animation_hierarchy[str(index)]
-                    for animation in pending_animations:
-                        if animation == ranking or (animation in attack_animations and ranking == "attacking"):
-                            next_animation = animation
-                            break
-                    if next_animation != "":
-                        break
+            #     next_animation = ""
+            #     for index in self.animation_hierarchy.keys():
+            #         ranking = self.animation_hierarchy[str(index)]
+            #         for animation in pending_animations:
+            #             if animation == ranking or (animation in attack_animations and ranking == "attacking"):
+            #                 next_animation = animation
+            #                 break
+            #         if next_animation != "":
+            #             break
                 
-                self.change_animation_to(next_animation)
-                for timer in self.animation_timers.keys():
-                    if timer == next_animation:
-                        self.animation_timers[timer].start()
-                        if self.animation_timers[timer].finished():
-                            self.animation_timers[timer].reset()
-                            self.change_animation_to(None)
+            #     self.change_animation_to(next_animation)
+            #     for timer in self.animation_timers.keys():
+            #         if timer == next_animation:
+            #             self.animation_timers[timer].start()
+            #             if self.animation_timers[timer].finished():
+            #                 self.animation_timers[timer].reset()
+            #                 self.change_animation_to(None)
 
-                    else: self.animation_timers[timer].reset()
+            #         else: self.animation_timers[timer].reset()
 
             if any(self.animation_state.values()):   
                 for animation in self.animation_state.keys():
@@ -170,43 +178,63 @@ class Enemy(pygame.sprite.Sprite):
         if debug:
             state = self.find_true(self.state)
             if state != None:
-                #print(state, " : ", self.state_history)
+                print(state, " : ", self.state_history)
                 pass
 
+    def check_idle(self):
+        if not any(self.state.values()):
+            self.idle_timer.start()
+        else:
+            self.idle_timer.reset()
+
+        if self.idle_timer.finished() and self.collisions["bottom"]:
+            self.set_state("idle")
+            self.idle_timer.reset()
+            try:
+                if self.state_history[-1] != "idle":
+                    self.state_history.append("idle")
+            except IndexError:
+                pass
 
     def move(self):
-        #self.velocity.x = 
         direction = 1 if self.facing["right"] else -1
         self.pos.x += self.speed * direction
         self.rect.centerx = self.pos.x
     
-    def update(self, player, tiles, scroll):
+    def update(self, dt, player, tiles, bullets, scroll):
         self.check_state()
+        self.check_idle()
         self.check_state(debug=True)
-
-        if player.pos.x > self.pos.x:
-            self.facing["right"] = True
-            self.facing["false"] = False
-        elif player.pos.x < self.pos.x:
-            self.facing["right"] = False
-            self.facing["false"] = True
-
-        self.attack_timer += 1
         
-        if self.aggrobox.colliderect(player.rect) and not self.rect.colliderect(player.rect) and not self.sleeping:
-            self.move()
+        self.player = player
 
-        if self.attackbox.colliderect(player.rect) and self.attack_timer > self.attack_cooldown and not self.sleeping:
-            self.attack_timer = 0
-            print("attack")
+        #self.attack_timer += 1
+        
+        if self.aggrobox.colliderect(player.rect) and not self.engaged and not self.state["sleeping"]:
+            self.append_animation("aggrovated")
+        else: self.engaged = False
 
+        if self.animation_timers["aggrovated"].finished():
+            self.animation_timers["aggrovated"].reset()
+            self.append_animation("angry")
+
+        if self.animation_timers["angry"].finished():
+            self.animation_timers["angry"].reset()
+            self.engaged = True
+            #self.move()
+
+        # if self.attackbox.colliderect(player.rect) and self.attack_timer > self.attack_cooldown and not self.sleeping:
+        #     self.attack_timer = 0
+        #     print("attack")
+
+        self.horizontal_movement(dt)
         self.x_collisions(self.get_collisions(tiles))
-        self.vertical_movement()
+        self.vertical_movement(dt)
         self.y_collisions(self.get_collisions(tiles))
 
         self.pos.x += -(scroll.x)
         self.pos.y += -(scroll.y)
-
+        
         self.rect.midbottom = self.pos.xy
         self.drawbox.midbottom = self.render_pos.xy
         self.aggrobox.center = self.rect.center
@@ -217,8 +245,22 @@ class Enemy(pygame.sprite.Sprite):
             self.attackbox.midright = self.rect.midleft
 
     def render(self):
+        if self.state["walking"] and abs(self.velocity.x) > 0.25*game_vars["max_vel"]:
+            frame = self.animator.get_frame("walking")
+        elif self.state["jumping"]:
+            frame = self.animator.get_frame("jumping")
+        elif self.state["sleeping"]:
+            frame = self.animator.get_frame("sleeping")
+        elif self.state["attacking"]:
+            if self.animation_state["slam_attack"]:
+                frame = self.animator.get_frame("slam_attack")
+            elif self.animation_state["jump_attack"]:
+                frame = self.animator.get_frame("jump_attack")
+            else:
+                frame = self.animator.get_frame("idle")
+        else:
+            frame = self.animator.get_frame("idle")
 
-        frame = self.animator.get_frame("idle")
         if self.facing["left"]:
             frame = pygame.transform.flip(frame, True, False)
 
@@ -229,11 +271,45 @@ class Enemy(pygame.sprite.Sprite):
         pygame.draw.rect(self.canvas, colors["green"], self.attackbox, width=1)
         pygame.draw.rect(self.canvas, colors["hot pink"], self.aggrobox, width=1)
 
-    def vertical_movement(self):
-        self.velocity.y += game_vars["gravity"]
-        self.pos.y += self.velocity.y
+    def horizontal_movement(self, dt):
+        if debug:
+            dt = 1
+        else: dt *= fps
 
+        if self.engaged:
+            if self.player.pos.x > self.pos.x:
+                self.facing["left"], self.facing["right"] = False, True 
+            elif self.player.pos.x < self.pos.x:
+                self.facing["left"], self.facing["right"] = True, False
+            direction = self.facing["right"] - self.facing["left"]
+        elif self.roaming:
+            # Randomly walking
+            pass
+        else: direction = 0
+
+        self.acceleration.x = game_vars["speed"]*direction
+        self.velocity.x += dt*(self.acceleration.x + self.velocity.x*game_vars["ground_friction"])
+        self.limit_velocity(game_vars["max_vel"])
+        self.pos.x += int(self.velocity.x*dt + 0.5*(self.acceleration.x * dt**2))
+
+        self.rect.centerx = self.pos.x
+
+    def vertical_movement(self, dt):
+        if debug:
+            dt = 1
+        else: dt *= fps
+
+        self.velocity.y += self.acceleration.y*dt
+        delta_pos = int(self.velocity.y*dt + 0.5*(self.acceleration.y * dt**2))
+        delta_pos = 1 if delta_pos == 0 else delta_pos
+        self.pos.y += delta_pos  
+    
         self.rect.bottom = self.pos.y
+
+    def limit_velocity(self, max_velocity):
+        if abs(self.velocity.x) > max_velocity:
+            self.velocity.x = max_velocity if self.velocity.x > 0 else -max_velocity 
+        if abs(self.velocity.x) < 0.1: self.velocity.x = 0
 
     def jump(self):
         """jumps"""
@@ -272,15 +348,17 @@ class Enemy(pygame.sprite.Sprite):
 
         self.animation_timers = dict()
         
-        stand_up_duration = sum(self.animator.animation_delays["stand_up"])
-        self.stand_up_timer = Timer("down", "ticks", stand_up_duration)
-        self.animation_timers["rolling"] = self.stand_up_timer
+        aggrovated_animation_duration = sum(self.animator.animation_delays["aggrovated"])
+        aggrovated_timer = Timer("down", "ticks", aggrovated_animation_duration)
+        self.animation_timers["aggrovated"] = aggrovated_timer
 
         angry_animation_duration = sum(self.animator.animation_delays["angry"])
-        self.stand_up_timer = Timer("down", "ticks", stand_up_duration)
-        self.animation_timers["rolling"] = self.stand_up_timer
+        angry_animation = Timer("down", "ticks", angry_animation_duration)
+        self.animation_timers["angry"] = angry_animation
 
-        self.attack_timer = 0
+        jump_attack_duration = sum(self.animator.animation_delays["jump_attack"])
+        jump_attack_timer = Timer("down", "ticks", jump_attack_duration)
+        self.animation_timers["jump_attack"] = jump_attack_timer
 
     def find_true(self, dictionary):
         for key, value in dictionary.items():
@@ -292,7 +370,7 @@ class Enemy(pygame.sprite.Sprite):
         """
         called when hit by bullet
         """
-        self.sleeping = True
+        self.append_animation("sleeping")
 
     def knockback(self):
         """
