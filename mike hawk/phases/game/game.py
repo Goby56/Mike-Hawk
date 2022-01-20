@@ -89,11 +89,10 @@ class Game(Phase):
         self.tiles.draw(self.canvas)
         self.other_tiles.draw(self.canvas)
         self.bullets.draw(self.canvas)
-        self.player.render()
-        self.paralax.render(method = "fg")
-        #self.enemy_group.draw(self.canvas)
         for gorilla in self.gorillas:
             gorilla.render()
+        self.player.render()
+        self.paralax.render(method = "fg")
 
     def get_world_dimensions(self):
         return (len(self.map[0]) * self.tile_size, len(self.map) * self.tile_size)

@@ -78,8 +78,10 @@ class Enemy(pygame.sprite.Sprite):
         self.health = 100
         self.speed = 3
         self.agro_distance = 20
-        self.attack_cooldown = 50
+        self.attack_cooldown = len(self.animator.animation_delays["jump_attack"])
         self.sleeping = False
+        self.moving = False
+        self.attacking = False
 
         # Timers
         self.create_timers()
@@ -186,19 +188,21 @@ class Enemy(pygame.sprite.Sprite):
 
         if player.pos.x > self.pos.x:
             self.facing["right"] = True
-            self.facing["false"] = False
+            self.facing["left"] = False
         elif player.pos.x < self.pos.x:
             self.facing["right"] = False
-            self.facing["false"] = True
+            self.facing["left"] = True
 
         self.attack_timer += 1
         
         if self.aggrobox.colliderect(player.rect) and not self.rect.colliderect(player.rect) and not self.sleeping:
             self.move()
+            self.moving = True
+        else: self.moving = False
 
-        if self.attackbox.colliderect(player.rect) and self.attack_timer > self.attack_cooldown and not self.sleeping:
-            self.attack_timer = 0
-            print("attack")
+        if self.attackbox.colliderect(player.rect) and not self.sleeping:
+            self.attacking = True
+        else: self.attacking = False
 
         self.x_collisions(self.get_collisions(tiles))
         self.vertical_movement()
@@ -217,8 +221,17 @@ class Enemy(pygame.sprite.Sprite):
             self.attackbox.midright = self.rect.midleft
 
     def render(self):
-
-        frame = self.animator.get_frame("idle")
+        
+        
+        if self.sleeping:
+            frame = self.animator.get_frame("sleeping")
+        elif self.moving:
+            frame = self.animator.get_frame("angry_walk")
+        elif self.attacking:
+            frame = self.animator.get_frame("jump_attack")
+        else:
+            frame = self.animator.get_frame("idle")
+        
         if self.facing["left"]:
             frame = pygame.transform.flip(frame, True, False)
 
