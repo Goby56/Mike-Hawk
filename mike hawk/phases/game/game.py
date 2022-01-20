@@ -33,6 +33,9 @@ class Game(Phase):
             self.level = json.load(f)
         self.map = self.level["map"]
 
+        self.gorillas = []
+        for pos in self.level["spawners"]:
+            self.gorillas.append(Enemy((pos), self.canvas))
 
         tileset = list(load_set(os.path.join(_base_dir, "assets", "tilesets"), self.level["tileset"]).values())
         self.load_map(tileset)
@@ -43,10 +46,6 @@ class Game(Phase):
         
         self.camera = Camera(self, canvas)
         self.scroll = pygame.Vector2(0, 0)
-
-        self.gorillas = []
-        self.gorillas.append(Enemy((29, 9), self.canvas))
-        self.gorillas.append(Enemy((5, 9), self.canvas))
         
         
     def load_map(self, tileset):
@@ -75,7 +74,6 @@ class Game(Phase):
         self.triggers.update(self.scroll)
         self.update_triggers()
         self.paralax.update(self.scroll)
-        
         self.bullets.update(self.scroll, self.tiles)
         Tile.tiles = self.tiles
         for gorilla in self.gorillas:
@@ -89,10 +87,11 @@ class Game(Phase):
         self.tiles.draw(self.canvas)
         self.other_tiles.draw(self.canvas)
         self.bullets.draw(self.canvas)
-        for gorilla in self.gorillas:
-            gorilla.render()
         self.player.render()
         self.paralax.render(method = "fg")
+        #self.enemy_group.draw(self.canvas)
+        for gorilla in self.gorillas:
+            gorilla.render()
 
     def get_world_dimensions(self):
         return (len(self.map[0]) * self.tile_size, len(self.map) * self.tile_size)
