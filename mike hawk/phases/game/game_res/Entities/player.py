@@ -12,12 +12,11 @@ class Player(pygame.sprite.Sprite):
     pos: Position of where the player first spawns
     height: The height of the player measured in X tiles (pixels)
     """
-    def __init__(self, listener, canvas, pos, height):
+    def __init__(self, listener, canvas, pos):
         super().__init__()
         self.listener = listener
         self.canvas = canvas
         self.pos = pygame.Vector2(pos)
-        self.height = height
 
         # Class instantiations
         self.spritesheet = Spritesheet("jones_hawk")
@@ -26,7 +25,8 @@ class Player(pygame.sprite.Sprite):
         # Rects and image scaling
         pbox = bounding_boxes["player"] # Player boxes
         hitbox_wh_ratio = pbox["hitbox"].x/pbox["hitbox"].y # Drawbox width/height ratio
-        hitbox_dim = pygame.Vector2(height*hitbox_wh_ratio, height) # Scale image to these dimensions
+        self.height = int(game_vars["tile_size"]*pbox["height"])
+        hitbox_dim = pygame.Vector2(self.height*hitbox_wh_ratio, self.height) # Scale image to these dimensions
 
         self.rect = pygame.Rect((0,0), hitbox_dim)
         self.rect.midbottom = self.pos.xy
@@ -35,7 +35,7 @@ class Player(pygame.sprite.Sprite):
         drawbox_dim = hitbox_dim.elementwise()*drawbox_scaling.elementwise()
 
         self.drawbox = pygame.Rect((0,0), drawbox_dim)
-        self.drawbox.midbottom = self.pos.xy
+        self.drawbox.midbottom = self.render_pos.xy
 
         self.attack_range = (drawbox_dim.x-hitbox_dim.x)/2
         attackbox_dim = self.attack_range, hitbox_dim.y
@@ -90,6 +90,10 @@ class Player(pygame.sprite.Sprite):
     def mouse_pos(self):
         return pygame.Vector2(pygame.mouse.get_pos())
 
+    @property
+    def render_pos(self):
+        return pygame.Vector2(self.pos.x, self.pos.y + game_vars["tile_size"]*3/32)
+
     def update(self, dt, collisions_objects, bullets, scroll):
         """
         Performs all the necessary updates for the player
@@ -98,7 +102,7 @@ class Player(pygame.sprite.Sprite):
 
         self.check_state()
         self.check_idle()
-        self.check_state(debug=True)
+        #self.check_state(debug=True)
 
         self.handle_input()
 
@@ -112,7 +116,7 @@ class Player(pygame.sprite.Sprite):
         self.pos.y += -(scroll.y)
 
         self.rect.midbottom = self.pos.xy
-        self.drawbox.midbottom = self.pos.xy
+        self.drawbox.midbottom = self.render_pos.xy
         if self.facing["right"]:
             self.attackbox.midleft = self.rect.midright
         elif self.facing["left"]:
@@ -158,24 +162,11 @@ class Player(pygame.sprite.Sprite):
         pygame.draw.rect(self.canvas, colors["red"], self.rect, width=1)
         pygame.draw.rect(self.canvas, colors["green"], self.attackbox, width=1)
 
-    def set_state(self, state, bool=True, animation=False):
+    def set_state(self, state, bool=True):
         """
         Sets all states to false, then {state} to true.
         Can set the given {state} to false if {bool}=False.
-        If {animation}=True the given {state} will become true in the {self.animation_state}
-        and stop some* of the animation timers\n
-        *Do not stop\n
-        -death_animation_timer
         """
-        # if animation:
-        #     for key in self.animation_state.keys():
-        #         self.animation_state[key] = False
-        #     if state != None:
-        #         self.animation_state[state] = bool
-        #     for animation in self.animation_timers:
-        #         if animation not in [state, "death"]:
-        #             self.animation_timers[animation].reset()
-        # else:
         for key in self.state.keys():
             self.state[key] = False
         if state != None:
@@ -367,7 +358,6 @@ class Player(pygame.sprite.Sprite):
         self.pos.x += int(self.velocity.x*dt + 0.5*(self.acceleration.x * dt**2))
 
         self.rect.centerx = self.pos.x
-        self.drawbox.centerx = self.pos.x
 
     def vertical_movement(self, dt):
         """
@@ -378,7 +368,7 @@ class Player(pygame.sprite.Sprite):
         else: dt *= fps
 
         if self.listener.key_pressed("space", hold=True) and self.collisions["bottom"]:
-            self.velocity.y = -game_vars["jump strength"]
+            self.velocity.y = -game_vars["player_jump_strength"]
 
         if self.collisions["bottom"] and (self.state["falling"] or self.previous_state["falling"]):
             rolling_fall_range = range(game_vars["fall_ranges"][0], game_vars["fall_ranges"][1])
@@ -397,7 +387,6 @@ class Player(pygame.sprite.Sprite):
     
 
         self.rect.bottom = self.pos.y
-        self.drawbox.bottom = self.pos.y
 
     def limit_velocity(self, max_velocity, increase_vel=False):
         """
@@ -477,8 +466,7 @@ class Player(pygame.sprite.Sprite):
             self.drawbox.midbottom = self.pos.xy
 
     def get_collisions(self, group):
-        collisions = pygame.sprite.spritecollide(self, group, False)
-        return collisions
+        return pygame.sprite.spritecollide(self, group, False)
 
     def create_timers(self):
         self.idle_timer = Timer("down", "ticks", 2)

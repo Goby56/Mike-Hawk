@@ -8,7 +8,7 @@ MAX_Y = 256
 
 import ctypes, pygame, os
 SCREENSIZE = ctypes.windll.user32.GetSystemMetrics(0), ctypes.windll.user32.GetSystemMetrics(1)
-#SCREENSIZE = (1280, 720)
+SCREENSIZE = (1280, 720) #Test school laptop screensize
 SCREEN_WIDTH, SCREEN_HEIGHT = SCREENSIZE
 NOMINAL_WIDTH, NOMINAL_HEIGHT = [1920, 1080]
 screen_scale_x = SCREEN_WIDTH / NOMINAL_WIDTH
@@ -26,18 +26,19 @@ colors = {
     "green": (0, 255, 0),
     "black magic": (20, 20, 20),
     "white knight": (200, 200, 200),
-    "cool blue": (40, 128, 235)
+    "cool blue": (40, 128, 235),
+    "hot pink": (255,105,180)
 }
 
 game_vars = {
     "gravity": 2/3*screen_scale_x,
-    "jump strength": 32/3*screen_scale_x,
+    "player_jump_strength": 32/3*screen_scale_x,
+    "gorilla_jump_strength": 64/3*screen_scale_x,
     "speed": 20/3*screen_scale_x,
     "ground_friction": -0.2*screen_scale_x,
     "air_resistance": -0.075*screen_scale_x,
     "max_vel": 3*screen_scale_x,
     "tile_size": int(54*screen_scale_x),
-    "player_height": 2,
     "fall_ranges":[4,10,20], # dy<4:nothing, 4<dy<10:rolling, 10<dy<20:unconscious, dy>20:dead
     "player_fire_angle":40 # Degrees
 }   
@@ -45,7 +46,14 @@ game_vars = {
 bounding_boxes = {
     "player": {
         "hitbox":pygame.math.Vector2(18,22),
-        "drawbox":pygame.math.Vector2(64,32)
+        "drawbox":pygame.math.Vector2(64,32),
+        "height":2
+    },
+    "gorilla": {
+        "hitbox":pygame.math.Vector2(36,44),
+        "drawbox":pygame.math.Vector2(64,64),
+        "height":3,
+        "aggrobox":pygame.math.Vector2(24,5) # Tiles
     }
 
 }

@@ -44,7 +44,7 @@ class BackgroundParalax:
 
 class MenuButton:
     rect = menubutton.get_rect()
-    def __init__(self, surface, listener, pos, text, command=None, scale_x=2, scale_y=3):
+    def __init__(self, surface, listener, pos, text, command=None, scale_x=2, scale_y=3, font_size=1):
         self._surface = surface
         self.orig_rect = menubutton.get_rect()
         self._image = menubutton.copy()
@@ -53,7 +53,7 @@ class MenuButton:
         self._listener = listener
         self.scale_x = screen_scale_x*scale_x
         self.scale_y = screen_scale_y*scale_y
-        self.font_size = int(60 * screen_scale_x)
+        self.font_size = int(60 * screen_scale_y * font_size)
 
         self._image = pygame.transform.scale(self._image, (int(self.scale_x*self.orig_rect.width), int(self.scale_y*self.orig_rect.height)))
 
@@ -83,7 +83,7 @@ class MenuButton:
 
 
 class MenuButtonPanel:
-    def __init__(self, surface, listener, start_pos, buttons: int, padding, texts: list, commands: list, scl_x=5, scl_y=3):
+    def __init__(self, surface, listener, start_pos, buttons: int, padding, texts: list, commands: list, scl_x=4, scl_y=3):
         self._surface = surface
         self._listener = listener
         self.pos = start_pos
