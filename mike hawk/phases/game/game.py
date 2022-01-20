@@ -45,12 +45,10 @@ class Game(Phase):
         self.scroll = pygame.Vector2(0, 0)
 
         self.gorillas = []
-        self.gorillas.append(Enemy((30*game_vars["tile_size"], 10*game_vars["tile_size"]), self.canvas))
-
-        # self.enemy_group = pygame.sprite.Group()
-        # self.enemy_group.add(Enemy((5, 10), self.canvas))
+        self.gorillas.append(Enemy((29, 9), self.canvas))
+        self.gorillas.append(Enemy((5, 9), self.canvas))
         
-
+        
     def load_map(self, tileset):
         x_list = []
         for pos, tile_data in self.map.items():
@@ -82,6 +80,8 @@ class Game(Phase):
         Tile.tiles = self.tiles
         for gorilla in self.gorillas:
             gorilla.update(self.player, self.tiles, self.scroll)
+            if pygame.sprite.spritecollide(gorilla, self.bullets, dokill=True):
+                gorilla.sleeping = True
 
 
     def render(self):

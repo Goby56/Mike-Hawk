@@ -13,8 +13,11 @@ class Enemy(pygame.sprite.Sprite):
     """
     An enemy class made for inheritance
     """
-    def __init__(self, pos, canvas):
+    def __init__(self, spawn_pos, canvas):
         super().__init__()
+
+        x, y = spawn_pos
+        pos = (x*TILES_SIZE, (MAX_Y - y)*TILES_SIZE)
 
         self.pos = pygame.Vector2(pos)
         self.canvas = canvas
@@ -73,6 +76,10 @@ class Enemy(pygame.sprite.Sprite):
         self.velocity = pygame.Vector2(0, 0)
         self.scroll_offset = pygame.Vector2(0, 0)
         self.health = 100
+        self.speed = 3
+        self.agro_distance = 20
+        self.attack_cooldown = 50
+        self.sleeping = False
 
         # Timers
         self.create_timers()
@@ -163,10 +170,16 @@ class Enemy(pygame.sprite.Sprite):
         if debug:
             state = self.find_true(self.state)
             if state != None:
-                print(state, " : ", self.state_history)
+                #print(state, " : ", self.state_history)
                 pass
 
 
+    def move(self):
+        #self.velocity.x = 
+        direction = 1 if self.facing["right"] else -1
+        self.pos.x += self.speed * direction
+        self.rect.centerx = self.pos.x
+    
     def update(self, player, tiles, scroll):
         self.check_state()
         self.check_state(debug=True)
@@ -178,16 +191,19 @@ class Enemy(pygame.sprite.Sprite):
             self.facing["right"] = False
             self.facing["false"] = True
 
-        if self.aggrobox.colliderect(player.rect) and not self.state["aggrovated"]:
-            self.append_animation("stand_up")
+        self.attack_timer += 1
+        
+        if self.aggrobox.colliderect(player.rect) and not self.rect.colliderect(player.rect) and not self.sleeping:
+            self.move()
 
+        if self.attackbox.colliderect(player.rect) and self.attack_timer > self.attack_cooldown and not self.sleeping:
+            self.attack_timer = 0
+            print("attack")
 
-        self.horizontal_movement()
         self.x_collisions(self.get_collisions(tiles))
         self.vertical_movement()
         self.y_collisions(self.get_collisions(tiles))
 
-        self.scroll_offset += scroll
         self.pos.x += -(scroll.x)
         self.pos.y += -(scroll.y)
 
@@ -213,15 +229,6 @@ class Enemy(pygame.sprite.Sprite):
         pygame.draw.rect(self.canvas, colors["green"], self.attackbox, width=1)
         pygame.draw.rect(self.canvas, colors["hot pink"], self.aggrobox, width=1)
 
-    def horizontal_movement(self):
-        if self.state["aggrovated"]:
-            direction = self.facing["right"] - self.facing["left"]
-
-            self.velocity.x += game_vars["speed"] * direction
-            self.pos.x += self.velocity.x
-
-            self.rect.centerx = self.pos.x
-
     def vertical_movement(self):
         self.velocity.y += game_vars["gravity"]
         self.pos.y += self.velocity.y
@@ -241,7 +248,7 @@ class Enemy(pygame.sprite.Sprite):
                 self.collisions["left"] = True
             self.velocity.x = 0
 
-        self.pos.xy = self.rect.midbottom
+        self.pos.x = self.rect.centerx
 
         if len(collisions): return True
         return False
@@ -255,8 +262,7 @@ class Enemy(pygame.sprite.Sprite):
                 self.rect.bottom = tile.rect.top
                 self.collisions["bottom"] = True
             self.velocity.y = 0
-        
-        self.pos.xy = self.rect.midbottom
+        self.pos.y = self.rect.bottom
 
         if len(collisions): return True
         return False
@@ -273,6 +279,8 @@ class Enemy(pygame.sprite.Sprite):
         angry_animation_duration = sum(self.animator.animation_delays["angry"])
         self.stand_up_timer = Timer("down", "ticks", stand_up_duration)
         self.animation_timers["rolling"] = self.stand_up_timer
+
+        self.attack_timer = 0
 
     def find_true(self, dictionary):
         for key, value in dictionary.items():

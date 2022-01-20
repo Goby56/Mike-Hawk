@@ -53,7 +53,7 @@ bounding_boxes = {
         "hitbox":pygame.math.Vector2(36,44),
         "drawbox":pygame.math.Vector2(64,64),
         "height":3,
-        "aggrobox":pygame.math.Vector2(24,5) # Tiles
+        "aggrobox":pygame.math.Vector2(24,10) # Tiles
     }
 
 }

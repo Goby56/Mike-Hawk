@@ -18,5 +18,5 @@ class Bullet(pygame.sprite.Sprite):
     def update(self, scroll, tiles):
         self.rect.x += math.cos(self.angle) * self.speed - scroll.x
         self.rect.y += math.sin(self.angle) * self.speed - scroll.y
-        if pygame.sprite.spritecollide(self, tiles, dokill=True):
+        if pygame.sprite.spritecollide(self, tiles, dokill=False):
             self.kill()
